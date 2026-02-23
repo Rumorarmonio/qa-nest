@@ -1,6 +1,8 @@
 import { fakerRU as faker } from '@faker-js/faker'
 
 import { appDataSource } from '@/database/data-source'
+
+import { AnswerEntity } from '@/answers/answer.entity'
 import { QuestionEntity } from '@/questions/question.entity'
 
 type SeedQuestion = Pick<QuestionEntity, 'userName' | 'title' | 'questionText'>
@@ -26,11 +28,13 @@ async function seedQuestionsReset(): Promise<void> {
   await appDataSource.initialize()
 
   try {
+    const answersRepository = appDataSource.getRepository(AnswerEntity)
     const questionsRepository = appDataSource.getRepository(QuestionEntity)
 
     faker.seed(2026)
 
-    await questionsRepository.clear()
+    await answersRepository.createQueryBuilder().delete().execute()
+    await questionsRepository.createQueryBuilder().delete().execute()
 
     const seedQuestions = Array.from({ length: 20 }, () => buildQuestion())
     const questionEntities = questionsRepository.create(seedQuestions)

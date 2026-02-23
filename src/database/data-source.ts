@@ -4,6 +4,7 @@ import { config as loadEnv } from 'dotenv'
 import { DataSource } from 'typeorm'
 
 import { QuestionEntity } from '@/questions/question.entity'
+import { AnswerEntity } from '@/answers/answer.entity'
 
 loadEnv()
 
@@ -14,7 +15,7 @@ export const appDataSource = new DataSource({
   username: process.env.DATABASE_USER ?? 'app',
   password: process.env.DATABASE_PASSWORD ?? 'app',
   database: process.env.DATABASE_NAME ?? 'app',
-  entities: [QuestionEntity],
+  entities: [QuestionEntity, AnswerEntity],
   synchronize: false,
   logging: false,
 })
