@@ -1,0 +1,399 @@
+{
+  "info": {
+    "_postman_id": "f0f9b7f3-4e34-4be5-8f5e-0a7b8fb3c901",
+    "name": "Questions + Answers API (pagination + includeAnswers)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000/api"
+    },
+    {
+      "key": "questionId",
+      "value": ""
+    },
+    {
+      "key": "answerId",
+      "value": ""
+    },
+    {
+      "key": "secondAnswerId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Questions - Create",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+              "const responseJson = pm.response.json();",
+              "pm.expect(responseJson).to.have.property('id');",
+              "pm.collectionVariables.set('questionId', responseJson.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userName\": \"Иван\",\n  \"title\": \"Как реализовать best answer?\",\n  \"questionText\": \"Хочу один лучший ответ на вопрос и пагинацию списка вопросов.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions"]
+        }
+      }
+    },
+    {
+      "name": "Answers - Create #1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+              "const responseJson = pm.response.json();",
+              "pm.expect(responseJson).to.have.property('id');",
+              "pm.collectionVariables.set('answerId', responseJson.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userName\": \"Анна\",\n  \"answerText\": \"Сделай отдельный endpoint mark-best и используй транзакцию.\",\n  \"isBest\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions", "{{questionId}}", "answers"]
+        }
+      }
+    },
+    {
+      "name": "Answers - Create #2 (best=true)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+              "const responseJson = pm.response.json();",
+              "pm.expect(responseJson).to.have.property('id');",
+              "pm.collectionVariables.set('secondAnswerId', responseJson.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userName\": \"Сергей\",\n  \"answerText\": \"Добавь partial unique index в БД на лучший ответ.\",\n  \"isBest\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions", "{{questionId}}", "answers"]
+        }
+      }
+    },
+    {
+      "name": "Questions - List (default, no answers)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions"]
+        }
+      }
+    },
+    {
+      "name": "Questions - List (page=1, limit=5)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions?page=1&limit=5",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Questions - List (page=2, limit=5)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions?page=2&limit=5",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions"],
+          "query": [
+            {
+              "key": "page",
+              "value": "2"
+            },
+            {
+              "key": "limit",
+              "value": "5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Questions - List (includeAnswers=true)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions?includeAnswers=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions"],
+          "query": [
+            {
+              "key": "includeAnswers",
+              "value": "true"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Questions - List (includeAnswers=true, answersLimit=1)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions?includeAnswers=true&answersLimit=1",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions"],
+          "query": [
+            {
+              "key": "includeAnswers",
+              "value": "true"
+            },
+            {
+              "key": "answersLimit",
+              "value": "1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Questions - List (page + includeAnswers + answersLimit)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions?page=1&limit=10&includeAnswers=true&answersLimit=2",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "includeAnswers",
+              "value": "true"
+            },
+            {
+              "key": "answersLimit",
+              "value": "2"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Questions - Get by id",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{questionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions", "{{questionId}}"]
+        }
+      }
+    },
+    {
+      "name": "Answers - List by question",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions", "{{questionId}}", "answers"]
+        }
+      }
+    },
+    {
+      "name": "Answers - Mark best (#1)",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{baseUrl}}/answers/{{answerId}}/mark-best",
+          "host": ["{{baseUrl}}"],
+          "path": ["answers", "{{answerId}}", "mark-best"]
+        }
+      }
+    },
+    {
+      "name": "Answers - List by question (check best moved to #1)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions", "{{questionId}}", "answers"]
+        }
+      }
+    },
+    {
+      "name": "Questions - List (includeAnswers=true, verify best order)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions?includeAnswers=true&answersLimit=2",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions"],
+          "query": [
+            {
+              "key": "includeAnswers",
+              "value": "true"
+            },
+            {
+              "key": "answersLimit",
+              "value": "2"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Negative - Questions list invalid page",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions?page=0&limit=5",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions"],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "limit",
+              "value": "5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Negative - Questions list invalid answersLimit without includeAnswers",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/questions?answersLimit=2",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions"],
+          "query": [
+            {
+              "key": "answersLimit",
+              "value": "2"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cleanup - Delete answer #1",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/answers/{{answerId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["answers", "{{answerId}}"]
+        }
+      }
+    },
+    {
+      "name": "Cleanup - Delete answer #2",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/answers/{{secondAnswerId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["answers", "{{secondAnswerId}}"]
+        }
+      }
+    },
+    {
+      "name": "Cleanup - Delete question",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{questionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["questions", "{{questionId}}"]
+        }
+      }
+    }
+  ]
+}
