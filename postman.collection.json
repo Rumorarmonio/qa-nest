@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://127.0.0.1:3000/api"
+      "value": "http://localhost:3000/api"
     },
     {
       "key": "questionId",
@@ -68,12 +68,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "health"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
             }
           }
         },
@@ -118,13 +114,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
             }
           }
         },
@@ -158,13 +149,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
             }
           }
         },
@@ -198,13 +184,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
             }
           }
         },
@@ -220,13 +201,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "me"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
             }
           }
         },
@@ -242,13 +218,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "me"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
             }
           }
         },
@@ -264,13 +235,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "me"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
             }
           }
         },
@@ -290,13 +256,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
             }
           }
         },
@@ -306,13 +267,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/auth/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "me"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
             }
           }
         }
@@ -327,12 +283,29 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "health"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Negative - Questions Create without token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"Иван\",\n  \"title\": \"Без токена\",\n  \"questionText\": \"Должно быть 401\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"]
             }
           }
         },
@@ -358,6 +331,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
               }
             ],
             "body": {
@@ -366,12 +343,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/questions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"]
             }
           }
         },
@@ -397,6 +370,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
               }
             ],
             "body": {
@@ -405,14 +382,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions",
-                "{{questionId}}",
-                "answers"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}", "answers"]
             }
           }
         },
@@ -438,6 +409,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
               }
             ],
             "body": {
@@ -446,14 +421,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions",
-                "{{questionId}}",
-                "answers"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}", "answers"]
             }
           }
         },
@@ -463,12 +432,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"]
             }
           }
         },
@@ -478,12 +443,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions?page=1&limit=5",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"],
               "query": [
                 {
                   "key": "page",
@@ -503,12 +464,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions?page=2&limit=5",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"],
               "query": [
                 {
                   "key": "page",
@@ -528,12 +485,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions?includeAnswers=true",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"],
               "query": [
                 {
                   "key": "includeAnswers",
@@ -549,12 +502,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions?includeAnswers=true&answersLimit=1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"],
               "query": [
                 {
                   "key": "includeAnswers",
@@ -574,12 +523,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions?page=1&limit=10&includeAnswers=true&answersLimit=2",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"],
               "query": [
                 {
                   "key": "page",
@@ -607,13 +552,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions/{{questionId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions",
-                "{{questionId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}"]
             }
           }
         },
@@ -623,14 +563,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions",
-                "{{questionId}}",
-                "answers"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}", "answers"]
             }
           }
         },
@@ -640,15 +574,15 @@
             "method": "PATCH",
             "url": {
               "raw": "{{baseUrl}}/answers/{{answerId}}/mark-best",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "answers",
-                "{{answerId}}",
-                "mark-best"
-              ]
-            }
+              "host": ["{{baseUrl}}"],
+              "path": ["answers", "{{answerId}}", "mark-best"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ]
           }
         },
         {
@@ -657,14 +591,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions",
-                "{{questionId}}",
-                "answers"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}", "answers"]
             }
           }
         },
@@ -674,12 +602,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions?includeAnswers=true&answersLimit=2",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"],
               "query": [
                 {
                   "key": "includeAnswers",
@@ -699,12 +623,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions?page=0&limit=5",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"],
               "query": [
                 {
                   "key": "page",
@@ -724,12 +644,8 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/questions?answersLimit=2",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"],
               "query": [
                 {
                   "key": "answersLimit",
@@ -745,14 +661,15 @@
             "method": "DELETE",
             "url": {
               "raw": "{{baseUrl}}/answers/{{answerId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "answers",
-                "{{answerId}}"
-              ]
-            }
+              "host": ["{{baseUrl}}"],
+              "path": ["answers", "{{answerId}}"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ]
           }
         },
         {
@@ -761,13 +678,31 @@
             "method": "DELETE",
             "url": {
               "raw": "{{baseUrl}}/answers/{{secondAnswerId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "answers",
-                "{{secondAnswerId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["answers", "{{secondAnswerId}}"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Negative - Questions Delete as USER (403)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}"]
             }
           }
         },
@@ -777,14 +712,15 @@
             "method": "DELETE",
             "url": {
               "raw": "{{baseUrl}}/questions/{{questionId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "questions",
-                "{{questionId}}"
-              ]
-            }
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ]
           }
         }
       ]
