@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm'
 
 import { QuestionEntity } from '@/questions/question.entity'
 import { AnswerEntity } from '@/answers/answer.entity'
+import { UserEntity } from '@/users/user.entity'
 
 loadEnv()
 
@@ -15,7 +16,7 @@ export const appDataSource = new DataSource({
   username: process.env.DATABASE_USER ?? 'app',
   password: process.env.DATABASE_PASSWORD ?? 'app',
   database: process.env.DATABASE_NAME ?? 'app',
-  entities: [QuestionEntity, AnswerEntity],
+  entities: [QuestionEntity, AnswerEntity, UserEntity],
   synchronize: false,
   logging: false,
 })

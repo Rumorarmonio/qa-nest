@@ -11,8 +11,9 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Questions API')
-    .setDescription('Minimal CRUD example: Nest + TypeORM + Postgres + Zod')
+    .setDescription('QA Backend API')
     .setVersion('1.0.0')
+    .addBearerAuth()
     .build()
 
   const openApiDoc = SwaggerModule.createDocument(app, swaggerConfig)

@@ -7,6 +7,8 @@ import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod'
 import { HealthController } from '@/health.controller'
 import { QuestionsModule } from '@/questions/questions.module'
 import { AnswersModule } from '@/answers/answers.module'
+import { AuthModule } from '@/auth/auth.module'
+import { UsersModule } from '@/users/users.module'
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { AnswersModule } from '@/answers/answers.module'
 
     QuestionsModule,
     AnswersModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [HealthController],
   providers: [
