@@ -300,7 +300,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userName\": \"Иван\",\n  \"title\": \"Без токена\",\n  \"questionText\": \"Должно быть 401\"\n}"
+              "raw": "{\n  \"title\": \"Без токена\",\n  \"questionText\": \"Должно быть 401\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/questions",
@@ -339,7 +339,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userName\": \"Иван\",\n  \"title\": \"Как реализовать best answer?\",\n  \"questionText\": \"Хочу один лучший ответ на вопрос и пагинацию списка вопросов.\"\n}"
+              "raw": "{\n  \"title\": \"Как реализовать best answer?\",\n  \"questionText\": \"Хочу один лучший ответ на вопрос и пагинацию списка вопросов.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/questions",
@@ -378,7 +378,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userName\": \"Анна\",\n  \"answerText\": \"Сделай отдельный endpoint mark-best и используй транзакцию.\",\n  \"isBest\": false\n}"
+              "raw": "{\n  \"answerText\": \"Сделай отдельный endpoint mark-best и используй транзакцию.\",\n  \"isBest\": false\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
@@ -417,7 +417,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userName\": \"Сергей\",\n  \"answerText\": \"Добавь partial unique index в БД на лучший ответ.\",\n  \"isBest\": true\n}"
+              "raw": "{\n  \"answerText\": \"Добавь partial unique index в БД на лучший ответ.\",\n  \"isBest\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/questions/{{questionId}}/answers",

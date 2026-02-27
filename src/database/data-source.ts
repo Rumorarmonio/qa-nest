@@ -3,8 +3,8 @@ import 'reflect-metadata'
 import { config as loadEnv } from 'dotenv'
 import { DataSource } from 'typeorm'
 
-import { QuestionEntity } from '@/questions/question.entity'
 import { AnswerEntity } from '@/answers/answer.entity'
+import { QuestionEntity } from '@/questions/question.entity'
 import { UserEntity } from '@/users/user.entity'
 
 loadEnv()

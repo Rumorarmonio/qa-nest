@@ -44,6 +44,7 @@ export class QuestionsService {
     const skip = (page - 1) * limit
 
     const [questions, total] = await this.questionsRepository.findAndCount({
+      relations: { author: true },
       order: { createdAt: 'DESC' },
       skip,
       take: limit,
@@ -69,10 +70,7 @@ export class QuestionsService {
       .addSelect('COUNT(answer.id)', 'count')
       .where('answer.questionId IN (:...questionIds)', { questionIds })
       .groupBy('answer.questionId')
-      .getRawMany<{
-        questionId: string
-        count: string
-      }>()
+      .getRawMany<{ questionId: string; count: string }>()
 
     const answerCountByQuestionId = new Map<string, number>(
       answerCountsRaw.map((row) => [row.questionId, Number(row.count)]),
@@ -97,6 +95,7 @@ export class QuestionsService {
 
     const answers = await this.answersRepository.find({
       where: { questionId: In(questionIds) },
+      relations: { author: true },
       order: {
         isBest: 'DESC',
         createdAt: 'ASC',
@@ -134,7 +133,10 @@ export class QuestionsService {
   }
 
   async findOneOrThrow(id: string): Promise<QuestionEntity> {
-    const question = await this.questionsRepository.findOne({ where: { id } })
+    const question = await this.questionsRepository.findOne({
+      where: { id },
+      relations: { author: true },
+    })
 
     if (!question) {
       throw new NotFoundException(`Question ${id} not found`)
@@ -143,22 +145,23 @@ export class QuestionsService {
     return question
   }
 
-  async create(dto: CreateQuestionDto): Promise<QuestionEntity> {
+  async create(dto: CreateQuestionDto, authorId: string): Promise<QuestionEntity> {
     const question = this.questionsRepository.create({
-      userName: dto.userName,
+      authorId,
       title: dto.title,
       questionText: dto.questionText,
     })
 
-    return this.questionsRepository.save(question)
+    const saved = await this.questionsRepository.save(question)
+
+    return this.questionsRepository.findOneOrFail({
+      where: { id: saved.id },
+      relations: { author: true },
+    })
   }
 
   async update(id: string, dto: UpdateQuestionDto): Promise<QuestionEntity> {
     const question = await this.findOneOrThrow(id)
-
-    if (dto.userName !== undefined) {
-      question.userName = dto.userName
-    }
 
     if (dto.title !== undefined) {
       question.title = dto.title
@@ -168,12 +171,16 @@ export class QuestionsService {
       question.questionText = dto.questionText
     }
 
-    return this.questionsRepository.save(question)
+    const saved = await this.questionsRepository.save(question)
+
+    return this.questionsRepository.findOneOrFail({
+      where: { id: saved.id },
+      relations: { author: true },
+    })
   }
 
   async remove(id: string): Promise<{ deleted: boolean }> {
     const result = await this.questionsRepository.delete({ id })
-
     return { deleted: (result.affected ?? 0) > 0 }
   }
 }

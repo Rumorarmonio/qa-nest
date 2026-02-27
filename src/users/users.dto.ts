@@ -1,10 +1,6 @@
 import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
-
-const dateAsIsoString = z.codec(z.iso.datetime(), z.date(), {
-  decode: (isoString) => new Date(isoString),
-  encode: (date) => date.toISOString(),
-})
+import { dateAsIsoString } from '@/common/schemas/date.schema'
 
 export const userRoleSchema = z.enum(['USER', 'ADMIN'])
 

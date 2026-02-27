@@ -2,7 +2,9 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } f
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 import { ZodResponse } from 'nestjs-zod'
 
+import { CurrentUser } from '@/auth/current-user.decorator'
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard'
+import type { JwtPayload } from '@/auth/jwt-payload.type'
 import { Roles } from '@/auth/roles.decorator'
 import { RolesGuard } from '@/auth/roles.guard'
 import {
@@ -39,8 +41,8 @@ export class QuestionsController {
   @Roles(UserRole.USER, UserRole.ADMIN)
   @ApiBearerAuth()
   @ZodResponse({ type: QuestionDto, status: 201 })
-  create(@Body() dto: CreateQuestionDto) {
-    return this.questionsService.create(dto)
+  create(@Body() dto: CreateQuestionDto, @CurrentUser() currentUser: JwtPayload) {
+    return this.questionsService.create(dto, currentUser.sub)
   }
 
   @Patch(':id')

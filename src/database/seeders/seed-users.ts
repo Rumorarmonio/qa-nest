@@ -12,30 +12,10 @@ type SeedUser = {
 }
 
 const seedUsers: SeedUser[] = [
-  {
-    name: 'User One',
-    email: 'user1@example.com',
-    password: 'Password123!',
-    role: UserRole.USER,
-  },
-  {
-    name: 'User Two',
-    email: 'user2@example.com',
-    password: 'Password123!',
-    role: UserRole.USER,
-  },
-  {
-    name: 'User Three',
-    email: 'user3@example.com',
-    password: 'Password123!',
-    role: UserRole.USER,
-  },
-  {
-    name: 'Admin',
-    email: 'admin@example.com',
-    password: 'Password123!',
-    role: UserRole.ADMIN,
-  },
+  { name: 'User One', email: 'user1@example.com', password: 'Password123!', role: UserRole.USER },
+  { name: 'User Two', email: 'user2@example.com', password: 'Password123!', role: UserRole.USER },
+  { name: 'User Three', email: 'user3@example.com', password: 'Password123!', role: UserRole.USER },
+  { name: 'Admin', email: 'admin@example.com', password: 'Password123!', role: UserRole.ADMIN },
 ]
 
 async function seedUsersReset(): Promise<void> {

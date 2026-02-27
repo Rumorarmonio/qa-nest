@@ -2,9 +2,15 @@ import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
 import { dateAsIsoString } from '@/common/schemas/date.schema'
 
+export const userPreviewSchema = z.object({
+  id: z.uuid(),
+  name: z.string().min(1),
+})
+
 export const questionSchema = z.object({
   id: z.uuid(),
-  userName: z.string().min(1),
+  authorId: z.uuid(),
+  author: userPreviewSchema,
   title: z.string().min(1),
   questionText: z.string().min(1),
   createdAt: dateAsIsoString,
@@ -13,41 +19,28 @@ export const questionSchema = z.object({
 
 export class QuestionDto extends createZodDto(questionSchema, { codec: true }) {}
 
-export const createQuestionSchema = z.object({
-  userName: z.string().min(1),
-  title: z.string().min(1),
-  questionText: z.string().min(1),
-})
+export const createQuestionSchema = z
+  .object({
+    title: z.string().min(1),
+    questionText: z.string().min(1),
+  })
+  .strict()
 
-export class CreateQuestionDto extends createZodDto(createQuestionSchema.strict()) {}
+export class CreateQuestionDto extends createZodDto(createQuestionSchema) {}
 
 export const updateQuestionSchema = createQuestionSchema.partial()
 
 export class UpdateQuestionDto extends createZodDto(updateQuestionSchema.strict()) {}
 
-export const questionIdParamSchema = z
-  .object({
-    id: z.uuid(),
-  })
-  .strict()
-
+export const questionIdParamSchema = z.object({ id: z.uuid() }).strict()
 export class QuestionIdParamDto extends createZodDto(questionIdParamSchema) {}
 
-export const deleteQuestionResultSchema = z.object({
-  deleted: z.boolean(),
-})
-
+export const deleteQuestionResultSchema = z.object({ deleted: z.boolean() })
 export class DeleteQuestionResultDto extends createZodDto(deleteQuestionResultSchema) {}
 
 const booleanFromQuerySchema = z
   .union([z.boolean(), z.enum(['true', 'false'])])
-  .transform((value) => {
-    if (typeof value === 'boolean') {
-      return value
-    }
-
-    return value === 'true'
-  })
+  .transform((value) => (typeof value === 'boolean' ? value : value === 'true'))
 
 export const listQuestionsQuerySchema = z
   .object({
@@ -59,7 +52,7 @@ export const listQuestionsQuerySchema = z
   .superRefine((value, ctx) => {
     if (!value.includeAnswers && value.answersLimit !== undefined) {
       ctx.addIssue({
-        code: 'custom',
+        code: z.ZodIssueCode.custom,
         path: ['answersLimit'],
         message: 'answersLimit can be used only when includeAnswers=true',
       })
@@ -72,7 +65,8 @@ export class ListQuestionsQueryDto extends createZodDto(listQuestionsQuerySchema
 export const answerPreviewSchema = z.object({
   id: z.uuid(),
   questionId: z.uuid(),
-  userName: z.string().min(1),
+  authorId: z.uuid(),
+  author: userPreviewSchema,
   answerText: z.string().min(1),
   isBest: z.boolean(),
   createdAt: dateAsIsoString,
