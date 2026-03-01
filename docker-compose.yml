@@ -25,6 +25,8 @@ services:
     image: adminer:4.8.1
     ports:
       - "8080:8080"
+    volumes:
+      - ./adminer.theme.css:/var/www/html/adminer.css:ro
     depends_on:
       - postgres
 
