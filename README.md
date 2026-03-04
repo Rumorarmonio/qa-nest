@@ -97,6 +97,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 
+
 http://localhost:3000/api/docs
 
 http://localhost:3000/api/docs-json
@@ -104,3 +105,11 @@ http://localhost:3000/api/docs-json
 http://localhost:3000/api/docs-yaml
 
 http://localhost:8080/
+
+## Adminer
+
+System: PostgreSQL
+Server: postgres
+Username: app
+Password: app
+Database: app

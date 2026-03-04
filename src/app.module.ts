@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
-import { TypeOrmModule } from '@nestjs/typeorm'
+import { ConfigModule } from '@nestjs/config'
 import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod'
 
@@ -9,39 +8,29 @@ import { QuestionsModule } from '@/questions/questions.module'
 import { AnswersModule } from '@/answers/answers.module'
 import { AuthModule } from '@/auth/auth.module'
 import { UsersModule } from '@/users/users.module'
+import { PrismaModule } from '@/prisma/prisma.module'
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
 
-    TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DATABASE_HOST'),
-        port: Number(configService.get<string>('DATABASE_PORT')),
-        username: configService.get<string>('DATABASE_USER'),
-        password: configService.get<string>('DATABASE_PASSWORD'),
-        database: configService.get<string>('DATABASE_NAME'),
-
-        autoLoadEntities: true,
-
-        // Минимально для старта. Для продакшна лучше migrations + synchronize=false.
-        synchronize: true,
-
-        logging: false,
-      }),
-    }),
+    UsersModule,
+    AuthModule,
 
     QuestionsModule,
     AnswersModule,
-    AuthModule,
-    UsersModule,
   ],
   controllers: [HealthController],
   providers: [
-    { provide: APP_PIPE, useClass: ZodValidationPipe },
-    { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptor },
+    {
+      provide: APP_PIPE,
+      useClass: ZodValidationPipe,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ZodSerializerInterceptor,
+    },
   ],
 })
 export class AppModule {}

@@ -16,7 +16,7 @@ import {
   UpdateAnswerDto,
 } from '@/answers/answers.dto'
 import { AnswersService } from '@/answers/answers.service'
-import { UserRole } from '@/users/user-role.enum'
+import { UserRole } from '@prisma/client'
 
 @ApiTags('answers')
 @Controller()

@@ -1,10 +1,8 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
-import { Repository } from 'typeorm'
 
-import { UserEntity } from '@/users/user.entity'
-import { UserRole } from '@/users/user-role.enum'
+import { PrismaService } from '@/prisma/prisma.service'
+import { UserRole } from '@prisma/client'
 
 type CreateUserInput = {
   name: string
@@ -15,13 +13,12 @@ type CreateUserInput = {
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(UserEntity)
-    private readonly usersRepository: Repository<UserEntity>,
-  ) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
-  async findByIdOrThrow(id: string): Promise<UserEntity> {
-    const user = await this.usersRepository.findOne({ where: { id } })
+  async findByIdOrThrow(id: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: { id },
+    })
 
     if (!user) {
       throw new UnauthorizedException('User not found')
@@ -30,43 +27,55 @@ export class UsersService {
     return user
   }
 
-  async findByEmail(email: string): Promise<UserEntity | null> {
-    return this.usersRepository.findOne({
-      where: { email: email.toLowerCase() },
+  async findByEmail(email: string) {
+    return this.prismaService.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
     })
   }
 
-  async findByEmailWithPassword(email: string): Promise<UserEntity | null> {
-    return this.usersRepository
-      .createQueryBuilder('user')
-      .addSelect('user.passwordHash')
-      .where('LOWER(user.email) = LOWER(:email)', { email })
-      .getOne()
-  }
-
-  async createUser(input: CreateUserInput): Promise<UserEntity> {
+  async createUser(input: CreateUserInput) {
     const normalizedEmail = input.email.toLowerCase().trim()
-
-    const existingUser = await this.findByEmail(normalizedEmail)
-
-    if (existingUser) {
-      throw new ConflictException('Email is already registered')
-    }
-
     const passwordHash = await bcrypt.hash(input.password, 10)
 
-    const user = this.usersRepository.create({
-      name: input.name.trim(),
-      email: normalizedEmail,
-      passwordHash,
-      role: input.role ?? UserRole.USER,
-    })
+    try {
+      return await this.prismaService.user.create({
+        data: {
+          name: input.name.trim(),
+          email: normalizedEmail,
+          passwordHash,
+          role: input.role ?? UserRole.USER,
+        },
+      })
+    } catch (error: unknown) {
+      // Prisma unique violation
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as any).code === 'P2002'
+      ) {
+        throw new ConflictException('Email is already registered')
+      }
 
-    return this.usersRepository.save(user)
+      throw error
+    }
   }
 
-  async validateCredentials(email: string, password: string): Promise<UserEntity> {
-    const user = await this.findByEmailWithPassword(email)
+  async validateCredentials(email: string, password: string) {
+    const normalizedEmail = email.toLowerCase().trim()
+
+    const user = await this.prismaService.user.findUnique({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        passwordHash: true,
+      },
+    })
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials')
@@ -78,6 +87,8 @@ export class UsersService {
       throw new UnauthorizedException('Invalid credentials')
     }
 
-    return user
+    const { passwordHash, ...publicUser } = user
+
+    return publicUser
   }
 }

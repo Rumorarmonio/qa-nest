@@ -1,22 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { In, Repository } from 'typeorm'
 
-import { AnswerEntity } from '@/answers/answer.entity'
-import { QuestionEntity } from '@/questions/question.entity'
+import { PrismaService } from '@/prisma/prisma.service'
 import {
   CreateQuestionDto,
   ListQuestionsQueryDto,
   UpdateQuestionDto,
 } from '@/questions/questions.dto'
 
-type QuestionListItem = QuestionEntity & {
-  answersCount: number
-  answers?: AnswerEntity[]
-}
-
 type QuestionsListResponse = {
-  items: QuestionListItem[]
+  items: any[]
   pagination: {
     page: number
     limit: number
@@ -27,13 +19,7 @@ type QuestionsListResponse = {
 
 @Injectable()
 export class QuestionsService {
-  constructor(
-    @InjectRepository(QuestionEntity)
-    private readonly questionsRepository: Repository<QuestionEntity>,
-
-    @InjectRepository(AnswerEntity)
-    private readonly answersRepository: Repository<AnswerEntity>,
-  ) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   async findAll(query: ListQuestionsQueryDto): Promise<QuestionsListResponse> {
     const page = query.page
@@ -43,99 +29,54 @@ export class QuestionsService {
 
     const skip = (page - 1) * limit
 
-    const [questions, total] = await this.questionsRepository.findAndCount({
-      relations: { author: true },
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    })
-
-    if (questions.length === 0) {
-      return {
-        items: [],
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+    const [total, questions] = await Promise.all([
+      this.prismaService.question.count(),
+      this.prismaService.question.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          author: { select: { id: true, name: true } },
+          _count: { select: { answers: true } },
+          answers: includeAnswers
+            ? {
+                orderBy: [{ isBest: 'desc' }, { createdAt: 'asc' }],
+                take: answersLimit,
+                include: { author: { select: { id: true, name: true } } },
+              }
+            : false,
         },
-      }
-    }
+      }),
+    ])
 
-    const questionIds = questions.map((question) => question.id)
+    const totalPages = total === 0 ? 0 : Math.ceil(total / limit)
 
-    const answerCountsRaw = await this.answersRepository
-      .createQueryBuilder('answer')
-      .select('answer.questionId', 'questionId')
-      .addSelect('COUNT(answer.id)', 'count')
-      .where('answer.questionId IN (:...questionIds)', { questionIds })
-      .groupBy('answer.questionId')
-      .getRawMany<{ questionId: string; count: string }>()
-
-    const answerCountByQuestionId = new Map<string, number>(
-      answerCountsRaw.map((row) => [row.questionId, Number(row.count)]),
-    )
-
-    const itemsBase: QuestionListItem[] = questions.map((question) => ({
-      ...question,
-      answersCount: answerCountByQuestionId.get(question.id) ?? 0,
-    }))
-
-    if (!includeAnswers) {
-      return {
-        items: itemsBase,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      }
-    }
-
-    const answers = await this.answersRepository.find({
-      where: { questionId: In(questionIds) },
-      relations: { author: true },
-      order: {
-        isBest: 'DESC',
-        createdAt: 'ASC',
-      },
-    })
-
-    const answersByQuestionId = new Map<string, AnswerEntity[]>()
-
-    for (const answer of answers) {
-      const currentAnswers = answersByQuestionId.get(answer.questionId) ?? []
-      currentAnswers.push(answer)
-      answersByQuestionId.set(answer.questionId, currentAnswers)
-    }
-
-    const itemsWithAnswers: QuestionListItem[] = itemsBase.map((question) => {
-      const questionAnswers = answersByQuestionId.get(question.id) ?? []
-      const limitedAnswers =
-        answersLimit !== undefined ? questionAnswers.slice(0, answersLimit) : questionAnswers
+    const items = questions.map((question) => {
+      const { _count, ...rest } = question as any
 
       return {
-        ...question,
-        answers: limitedAnswers,
+        ...rest,
+        answersCount: _count.answers,
       }
     })
 
     return {
-      items: itemsWithAnswers,
+      items,
       pagination: {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages,
       },
     }
   }
 
-  async findOneOrThrow(id: string): Promise<QuestionEntity> {
-    const question = await this.questionsRepository.findOne({
+  async findOneOrThrow(id: string) {
+    const question = await this.prismaService.question.findUnique({
       where: { id },
-      relations: { author: true },
+      include: {
+        author: { select: { id: true, name: true } },
+      },
     })
 
     if (!question) {
@@ -145,42 +86,60 @@ export class QuestionsService {
     return question
   }
 
-  async create(dto: CreateQuestionDto, authorId: string): Promise<QuestionEntity> {
-    const question = this.questionsRepository.create({
-      authorId,
-      title: dto.title,
-      questionText: dto.questionText,
-    })
-
-    const saved = await this.questionsRepository.save(question)
-
-    return this.questionsRepository.findOneOrFail({
-      where: { id: saved.id },
-      relations: { author: true },
+  async create(dto: CreateQuestionDto, authorId: string) {
+    return this.prismaService.question.create({
+      data: {
+        authorId,
+        title: dto.title,
+        questionText: dto.questionText,
+      },
+      include: {
+        author: { select: { id: true, name: true } },
+      },
     })
   }
 
-  async update(id: string, dto: UpdateQuestionDto): Promise<QuestionEntity> {
-    const question = await this.findOneOrThrow(id)
+  async update(id: string, dto: UpdateQuestionDto) {
+    try {
+      return await this.prismaService.question.update({
+        where: { id },
+        data: {
+          title: dto.title ?? undefined,
+          questionText: dto.questionText ?? undefined,
+        },
+        include: {
+          author: { select: { id: true, name: true } },
+        },
+      })
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as any).code === 'P2025'
+      ) {
+        throw new NotFoundException(`Question ${id} not found`)
+      }
 
-    if (dto.title !== undefined) {
-      question.title = dto.title
+      throw error
     }
-
-    if (dto.questionText !== undefined) {
-      question.questionText = dto.questionText
-    }
-
-    const saved = await this.questionsRepository.save(question)
-
-    return this.questionsRepository.findOneOrFail({
-      where: { id: saved.id },
-      relations: { author: true },
-    })
   }
 
   async remove(id: string): Promise<{ deleted: boolean }> {
-    const result = await this.questionsRepository.delete({ id })
-    return { deleted: (result.affected ?? 0) > 0 }
+    try {
+      await this.prismaService.question.delete({ where: { id } })
+      return { deleted: true }
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as any).code === 'P2025'
+      ) {
+        return { deleted: false }
+      }
+
+      throw error
+    }
   }
 }

@@ -41,7 +41,6 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const user = await this.usersService.validateCredentials(dto.email, dto.password)
-
     return this.buildAuthResponse(user.id)
   }
 

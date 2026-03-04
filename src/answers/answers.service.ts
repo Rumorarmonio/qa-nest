@@ -1,37 +1,33 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { DataSource, Repository } from 'typeorm'
 
-import { AnswerEntity } from '@/answers/answer.entity'
+import { PrismaService } from '@/prisma/prisma.service'
 import { CreateAnswerDto, UpdateAnswerDto } from '@/answers/answers.dto'
-import { QuestionEntity } from '@/questions/question.entity'
 
 @Injectable()
 export class AnswersService {
-  constructor(
-    @InjectRepository(AnswerEntity)
-    private readonly answersRepository: Repository<AnswerEntity>,
+  constructor(private readonly prismaService: PrismaService) {}
 
-    @InjectRepository(QuestionEntity)
-    private readonly questionsRepository: Repository<QuestionEntity>,
+  async findAllByQuestion(questionId: string) {
+    const questionExists = await this.prismaService.question.findUnique({
+      where: { id: questionId },
+      select: { id: true },
+    })
 
-    private readonly dataSource: DataSource,
-  ) {}
+    if (!questionExists) {
+      throw new NotFoundException(`Question ${questionId} not found`)
+    }
 
-  async findAllByQuestion(questionId: string): Promise<AnswerEntity[]> {
-    await this.ensureQuestionExists(questionId)
-
-    return this.answersRepository.find({
+    return this.prismaService.answer.findMany({
       where: { questionId },
-      relations: { author: true },
-      order: { isBest: 'DESC', createdAt: 'ASC' },
+      orderBy: [{ isBest: 'desc' }, { createdAt: 'asc' }],
+      include: { author: { select: { id: true, name: true } } },
     })
   }
 
-  async findOneOrThrow(id: string): Promise<AnswerEntity> {
-    const answer = await this.answersRepository.findOne({
+  async findOneOrThrow(id: string) {
+    const answer = await this.prismaService.answer.findUnique({
       where: { id },
-      relations: { author: true },
+      include: { author: { select: { id: true, name: true } } },
     })
 
     if (!answer) {
@@ -41,86 +37,104 @@ export class AnswersService {
     return answer
   }
 
-  async create(questionId: string, dto: CreateAnswerDto, authorId: string): Promise<AnswerEntity> {
-    await this.ensureQuestionExists(questionId)
-
-    return this.dataSource.transaction(async (transactionManager) => {
-      const answersRepository = transactionManager.getRepository(AnswerEntity)
-
-      if (dto.isBest === true) {
-        await answersRepository.update({ questionId, isBest: true }, { isBest: false })
-      }
-
-      const answer = answersRepository.create({
-        questionId,
-        authorId,
-        answerText: dto.answerText,
-        isBest: dto.isBest ?? false,
-      })
-
-      const saved = await answersRepository.save(answer)
-
-      return answersRepository.findOneOrFail({
-        where: { id: saved.id },
-        relations: { author: true },
-      })
-    })
-  }
-
-  async update(id: string, dto: UpdateAnswerDto): Promise<AnswerEntity> {
-    const answer = await this.findOneOrThrow(id)
-
-    if (dto.answerText !== undefined) {
-      answer.answerText = dto.answerText
-    }
-
-    const saved = await this.answersRepository.save(answer)
-
-    return this.answersRepository.findOneOrFail({
-      where: { id: saved.id },
-      relations: { author: true },
-    })
-  }
-
-  async markBest(id: string): Promise<AnswerEntity> {
-    return this.dataSource.transaction(async (transactionManager) => {
-      const answersRepository = transactionManager.getRepository(AnswerEntity)
-
-      const answer = await answersRepository.findOne({ where: { id } })
-
-      if (!answer) {
-        throw new NotFoundException(`Answer ${id} not found`)
-      }
-
-      await answersRepository.update(
-        { questionId: answer.questionId, isBest: true },
-        { isBest: false },
-      )
-
-      answer.isBest = true
-
-      const saved = await answersRepository.save(answer)
-
-      return answersRepository.findOneOrFail({
-        where: { id: saved.id },
-        relations: { author: true },
-      })
-    })
-  }
-
-  async remove(id: string): Promise<{ deleted: boolean }> {
-    const result = await this.answersRepository.delete({ id })
-    return { deleted: (result.affected ?? 0) > 0 }
-  }
-
-  private async ensureQuestionExists(questionId: string): Promise<void> {
-    const question = await this.questionsRepository.findOne({
+  async create(questionId: string, dto: CreateAnswerDto, authorId: string) {
+    const questionExists = await this.prismaService.question.findUnique({
       where: { id: questionId },
       select: { id: true },
     })
 
-    if (!question) {
+    if (!questionExists) {
       throw new NotFoundException(`Question ${questionId} not found`)
+    }
+
+    const [created] = await this.prismaService.$transaction(async (tx) => {
+      if (dto.isBest === true) {
+        await tx.answer.updateMany({
+          where: { questionId, isBest: true },
+          data: { isBest: false },
+        })
+      }
+
+      const answer = await tx.answer.create({
+        data: {
+          questionId,
+          authorId,
+          answerText: dto.answerText,
+          isBest: dto.isBest ?? false,
+        },
+        include: { author: { select: { id: true, name: true } } },
+      })
+
+      return [answer] as const
+    })
+
+    return created
+  }
+
+  async update(id: string, dto: UpdateAnswerDto) {
+    try {
+      return await this.prismaService.answer.update({
+        where: { id },
+        data: {
+          answerText: dto.answerText ?? undefined,
+        },
+        include: { author: { select: { id: true, name: true } } },
+      })
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as any).code === 'P2025'
+      ) {
+        throw new NotFoundException(`Answer ${id} not found`)
+      }
+
+      throw error
+    }
+  }
+
+  async markBest(id: string) {
+    const answer = await this.prismaService.answer.findUnique({
+      where: { id },
+      select: { id: true, questionId: true },
+    })
+
+    if (!answer) {
+      throw new NotFoundException(`Answer ${id} not found`)
+    }
+
+    const updated = await this.prismaService.$transaction(async (tx) => {
+      await tx.answer.updateMany({
+        where: { questionId: answer.questionId, isBest: true },
+        data: { isBest: false },
+      })
+
+      return tx.answer.update({
+        where: { id: answer.id },
+        data: { isBest: true },
+        include: { author: { select: { id: true, name: true } } },
+      })
+    })
+
+    return updated
+  }
+
+  async remove(id: string): Promise<{ deleted: boolean }> {
+    try {
+      await this.prismaService.answer.delete({ where: { id } })
+      return { deleted: true }
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as any).code === 'P2025'
+      ) {
+        return { deleted: false }
+      }
+
+      throw error
     }
   }
 }

@@ -1,28 +1,21 @@
+import 'dotenv/config'
+
 import { fakerRU as faker } from '@faker-js/faker'
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@prisma/client'
 
-import { appDataSource } from '@/database/data-source'
-import { AnswerEntity } from '@/answers/answer.entity'
-import { QuestionEntity } from '@/questions/question.entity'
-import { UserEntity } from '@/users/user.entity'
-
-type SeedAnswer = Pick<AnswerEntity, 'questionId' | 'authorId' | 'answerText' | 'isBest'>
-
-function buildAnswer(questionId: string, authorId: string, isBest: boolean): SeedAnswer {
-  const answerText = faker.helpers
-    .multiple(() => faker.lorem.sentence({ min: 8, max: 18 }), {
-      count: faker.number.int({ min: 1, max: 4 }),
-    })
-    .join(' ')
-
-  return {
-    questionId,
-    authorId,
-    answerText,
-    isBest,
-  }
+const connectionString = process.env.DATABASE_URL
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not set')
 }
 
-function buildAnswersForQuestion(questionId: string, userIds: string[]): SeedAnswer[] {
+const pool = new Pool({ connectionString })
+const adapter = new PrismaPg(pool)
+
+const prisma = new PrismaClient({ adapter })
+
+function buildAnswersForQuestion(questionId: string, userIds: string[]) {
   const answersCount = faker.number.int({ min: 0, max: 10 })
 
   if (answersCount === 0) {
@@ -34,33 +27,29 @@ function buildAnswersForQuestion(questionId: string, userIds: string[]): SeedAns
     ? faker.number.int({ min: 0, max: answersCount - 1 })
     : -1
 
-  const answers: SeedAnswer[] = []
+  return Array.from({ length: answersCount }, (_, index) => {
+    const answerText = faker.helpers
+      .multiple(() => faker.lorem.sentence({ min: 8, max: 18 }), {
+        count: faker.number.int({ min: 1, max: 4 }),
+      })
+      .join(' ')
 
-  for (let answerIndex = 0; answerIndex < answersCount; answerIndex += 1) {
-    const authorId = faker.helpers.arrayElement(userIds)
-    answers.push(buildAnswer(questionId, authorId, answerIndex === bestAnswerIndex))
-  }
-
-  return answers
+    return {
+      questionId,
+      authorId: faker.helpers.arrayElement(userIds),
+      answerText,
+      isBest: index === bestAnswerIndex,
+    }
+  })
 }
 
 async function seedAnswersReset(): Promise<void> {
-  await appDataSource.initialize()
-
   try {
-    const usersRepository = appDataSource.getRepository(UserEntity)
-    const questionsRepository = appDataSource.getRepository(QuestionEntity)
-    const answersRepository = appDataSource.getRepository(AnswerEntity)
-
     faker.seed(2027)
 
-    const users = await usersRepository.find({
-      select: {
-        id: true,
-      },
-      order: {
-        createdAt: 'ASC',
-      },
+    const users = await prisma.user.findMany({
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
     })
 
     if (users.length === 0) {
@@ -70,13 +59,9 @@ async function seedAnswersReset(): Promise<void> {
 
     const userIds = users.map((user) => user.id)
 
-    const questions = await questionsRepository.find({
-      select: {
-        id: true,
-      },
-      order: {
-        createdAt: 'ASC',
-      },
+    const questions = await prisma.question.findMany({
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
     })
 
     if (questions.length === 0) {
@@ -84,30 +69,29 @@ async function seedAnswersReset(): Promise<void> {
       return
     }
 
-    await answersRepository.createQueryBuilder().delete().execute()
+    await prisma.answer.deleteMany()
 
-    const seedAnswers = questions.flatMap((question) =>
+    const answersData = questions.flatMap((question) =>
       buildAnswersForQuestion(question.id, userIds),
     )
 
-    if (seedAnswers.length === 0) {
+    if (answersData.length === 0) {
       console.log(
-        `Seed completed: reset answers table, but generated 0 answers for ${questions.length} questions`,
+        `Seed completed: reset answers, but generated 0 answers for ${questions.length} questions`,
       )
       return
     }
 
-    const answerEntities = answersRepository.create(seedAnswers)
+    await prisma.answer.createMany({ data: answersData })
 
-    await answersRepository.save(answerEntities)
-
-    const bestAnswersCount = seedAnswers.filter((answer) => answer.isBest).length
+    const bestCount = answersData.filter((answer) => answer.isBest).length
 
     console.log(
-      `Seed completed: reset answers and inserted ${answerEntities.length} answers for ${questions.length} questions (${bestAnswersCount} best answers)`,
+      `Seed completed: reset answers and inserted ${answersData.length} answers for ${questions.length} questions (${bestCount} best answers)`,
     )
   } finally {
-    await appDataSource.destroy()
+    await prisma.$disconnect()
+    await pool.end()
   }
 }
 

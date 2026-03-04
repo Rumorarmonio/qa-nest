@@ -17,7 +17,7 @@ import {
   UpdateQuestionDto,
 } from '@/questions/questions.dto'
 import { QuestionsService } from '@/questions/questions.service'
-import { UserRole } from '@/users/user-role.enum'
+import { UserRole } from '@prisma/client';
 
 @ApiTags('questions')
 @Controller('questions')

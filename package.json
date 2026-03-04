@@ -19,9 +19,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "seed:users": "ts-node -r tsconfig-paths/register src/database/seeders/seed-users.ts",
     "seed:questions": "ts-node -r tsconfig-paths/register src/database/seeders/seed-questions.ts",
-    "seed:answers": "ts-node -r tsconfig-paths/register src/database/seeders/seed-answers.ts",
-    "seed:users": "ts-node -r tsconfig-paths/register src/database/seeders/seed-users.ts"
+    "seed:answers": "ts-node -r tsconfig-paths/register src/database/seeders/seed-answers.ts"
   },
   "dependencies": {
     "@faker-js/faker": "^10.3.0",
@@ -32,17 +32,17 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.6",
-    "@nestjs/typeorm": "^11.0.0",
+    "@prisma/adapter-pg": "^7.4.2",
+    "@prisma/client": "^7.4.2",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.3.1",
     "nestjs-zod": "^5.1.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
-    "pg": "^8.18.0",
+    "pg": "^8.19.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.28",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -63,6 +63,7 @@
     "globals": "^16.0.0",
     "jest": "^30.0.0",
     "prettier": "^3.4.2",
+    "prisma": "^7.4.2",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",

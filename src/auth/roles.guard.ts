@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core'
 
 import { ROLES_KEY } from '@/auth/roles.decorator'
 import type { JwtPayload } from '@/auth/jwt-payload.type'
-import { UserRole } from '@/users/user-role.enum'
+import { UserRole } from '@prisma/client'
 
 @Injectable()
 export class RolesGuard implements CanActivate {
