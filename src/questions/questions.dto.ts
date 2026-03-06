@@ -3,6 +3,11 @@ import { z } from 'zod'
 
 import { deleteResultSchema } from '@/common/schemas/common.schema'
 import { dateAsIsoString } from '@/common/schemas/date.schema'
+import {
+  answerTextFieldSchema,
+  questionTextFieldSchema,
+  titleFieldSchema,
+} from '@/common/schemas/fields.schema'
 import { createUuidParamSchema } from '@/common/schemas/param.schema'
 import {
   basePaginationQuerySchema,
@@ -16,7 +21,7 @@ export const answerPreviewSchema = z.object({
   questionId: z.uuid(),
   authorId: z.uuid(),
   author: userPreviewSchema,
-  answerText: z.string().min(1),
+  answerText: answerTextFieldSchema,
   isBest: z.boolean(),
   createdAt: dateAsIsoString,
   updatedAt: dateAsIsoString,
@@ -26,8 +31,8 @@ export const questionSchema = z.object({
   id: z.uuid(),
   authorId: z.uuid(),
   author: userPreviewSchema,
-  title: z.string().min(1),
-  questionText: z.string().min(1),
+  title: titleFieldSchema,
+  questionText: questionTextFieldSchema,
   createdAt: dateAsIsoString,
   updatedAt: dateAsIsoString,
 })
@@ -36,8 +41,8 @@ export class QuestionDto extends createZodDto(questionSchema, { codec: true }) {
 
 export const createQuestionSchema = z
   .object({
-    title: z.string().min(1),
-    questionText: z.string().min(1),
+    title: titleFieldSchema,
+    questionText: questionTextFieldSchema,
   })
   .strict()
 

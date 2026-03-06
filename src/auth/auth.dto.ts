@@ -1,13 +1,20 @@
 import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
 
+import {
+  emailFieldSchema,
+  loginPasswordFieldSchema,
+  nameFieldSchema,
+  nonEmptyString,
+  passwordFieldSchema,
+} from '@/common/schemas/fields.schema'
 import { userSchema } from '@/users/users.dto'
 
 export const registerSchema = z
   .object({
-    name: z.string().trim().min(1).max(120),
-    email: z.email(),
-    password: z.string().min(8).max(128),
+    name: nameFieldSchema,
+    email: emailFieldSchema,
+    password: passwordFieldSchema,
   })
   .strict()
 
@@ -15,15 +22,15 @@ export class RegisterDto extends createZodDto(registerSchema) {}
 
 export const loginSchema = z
   .object({
-    email: z.email(),
-    password: z.string().min(1).max(128),
+    email: emailFieldSchema,
+    password: loginPasswordFieldSchema,
   })
   .strict()
 
 export class LoginDto extends createZodDto(loginSchema) {}
 
 export const authResponseSchema = z.object({
-  accessToken: z.string().min(1),
+  accessToken: nonEmptyString,
   user: userSchema,
 })
 

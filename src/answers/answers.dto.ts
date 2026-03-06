@@ -1,18 +1,18 @@
 import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
-import { dateAsIsoString } from '@/common/schemas/date.schema'
 
-const userPreviewSchema = z.object({
-  id: z.uuid(),
-  name: z.string().min(1),
-})
+import { deleteResultSchema } from '@/common/schemas/common.schema'
+import { dateAsIsoString } from '@/common/schemas/date.schema'
+import { answerTextFieldSchema } from '@/common/schemas/fields.schema'
+import { createUuidParamSchema } from '@/common/schemas/param.schema'
+import { userPreviewSchema } from '@/common/schemas/user.schema'
 
 export const answerSchema = z.object({
   id: z.uuid(),
   questionId: z.uuid(),
   authorId: z.uuid(),
   author: userPreviewSchema,
-  answerText: z.string().min(1),
+  answerText: answerTextFieldSchema,
   isBest: z.boolean(),
   createdAt: dateAsIsoString,
   updatedAt: dateAsIsoString,
@@ -22,7 +22,7 @@ export class AnswerDto extends createZodDto(answerSchema, { codec: true }) {}
 
 export const createAnswerSchema = z
   .object({
-    answerText: z.string().min(1),
+    answerText: answerTextFieldSchema,
     isBest: z.boolean().optional(),
   })
   .strict()
@@ -31,17 +31,17 @@ export class CreateAnswerDto extends createZodDto(createAnswerSchema) {}
 
 export const updateAnswerSchema = z
   .object({
-    answerText: z.string().min(1).optional(),
+    answerText: answerTextFieldSchema.optional(),
   })
   .strict()
 
 export class UpdateAnswerDto extends createZodDto(updateAnswerSchema) {}
 
-export const questionIdParamSchema = z.object({ questionId: z.uuid() }).strict()
+export const questionIdParamSchema = createUuidParamSchema('questionId')
 export class QuestionIdParamDto extends createZodDto(questionIdParamSchema) {}
 
-export const answerIdParamSchema = z.object({ id: z.uuid() }).strict()
+export const answerIdParamSchema = createUuidParamSchema('id')
 export class AnswerIdParamDto extends createZodDto(answerIdParamSchema) {}
 
-export const deleteAnswerResultSchema = z.object({ deleted: z.boolean() })
+export const deleteAnswerResultSchema = deleteResultSchema
 export class DeleteAnswerResultDto extends createZodDto(deleteAnswerResultSchema) {}

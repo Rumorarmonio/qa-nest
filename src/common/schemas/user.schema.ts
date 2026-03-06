@@ -1,8 +1,10 @@
 import { z } from 'zod'
+import { UserRole } from '@prisma/client'
+import { nameFieldSchema } from '@/common/schemas/fields.schema'
 
-export const userRoleSchema = z.enum(['USER', 'ADMIN'])
+export const userRoleSchema = z.enum(UserRole)
 
 export const userPreviewSchema = z.object({
   id: z.uuid(),
-  name: z.string().min(1),
+  name: nameFieldSchema,
 })
