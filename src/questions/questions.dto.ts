@@ -1,10 +1,25 @@
 import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
-import { dateAsIsoString } from '@/common/schemas/date.schema'
 
-export const userPreviewSchema = z.object({
+import { deleteResultSchema } from '@/common/schemas/common.schema'
+import { dateAsIsoString } from '@/common/schemas/date.schema'
+import { createUuidParamSchema } from '@/common/schemas/param.schema'
+import {
+  basePaginationQuerySchema,
+  booleanQuerySchema,
+  paginationMetaSchema,
+} from '@/common/schemas/query.schema'
+import { userPreviewSchema } from '@/common/schemas/user.schema'
+
+export const answerPreviewSchema = z.object({
   id: z.uuid(),
-  name: z.string().min(1),
+  questionId: z.uuid(),
+  authorId: z.uuid(),
+  author: userPreviewSchema,
+  answerText: z.string().min(1),
+  isBest: z.boolean(),
+  createdAt: dateAsIsoString,
+  updatedAt: dateAsIsoString,
 })
 
 export const questionSchema = z.object({
@@ -28,31 +43,25 @@ export const createQuestionSchema = z
 
 export class CreateQuestionDto extends createZodDto(createQuestionSchema) {}
 
-export const updateQuestionSchema = createQuestionSchema.partial()
+export const updateQuestionSchema = createQuestionSchema.partial().strict()
 
-export class UpdateQuestionDto extends createZodDto(updateQuestionSchema.strict()) {}
+export class UpdateQuestionDto extends createZodDto(updateQuestionSchema) {}
 
-export const questionIdParamSchema = z.object({ id: z.uuid() }).strict()
+export const questionIdParamSchema = createUuidParamSchema('id')
 export class QuestionIdParamDto extends createZodDto(questionIdParamSchema) {}
 
-export const deleteQuestionResultSchema = z.object({ deleted: z.boolean() })
+export const deleteQuestionResultSchema = deleteResultSchema
 export class DeleteQuestionResultDto extends createZodDto(deleteQuestionResultSchema) {}
 
-const booleanFromQuerySchema = z
-  .union([z.boolean(), z.enum(['true', 'false'])])
-  .transform((value) => (typeof value === 'boolean' ? value : value === 'true'))
-
-export const listQuestionsQuerySchema = z
-  .object({
-    page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(100).default(10),
-    includeAnswers: booleanFromQuerySchema.optional().default(false),
+export const listQuestionsQuerySchema = basePaginationQuerySchema
+  .extend({
+    includeAnswers: booleanQuerySchema.optional().default(false),
     answersLimit: z.coerce.number().int().min(1).max(100).optional(),
   })
   .superRefine((value, ctx) => {
     if (!value.includeAnswers && value.answersLimit !== undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         path: ['answersLimit'],
         message: 'answersLimit can be used only when includeAnswers=true',
       })
@@ -62,17 +71,6 @@ export const listQuestionsQuerySchema = z
 
 export class ListQuestionsQueryDto extends createZodDto(listQuestionsQuerySchema) {}
 
-export const answerPreviewSchema = z.object({
-  id: z.uuid(),
-  questionId: z.uuid(),
-  authorId: z.uuid(),
-  author: userPreviewSchema,
-  answerText: z.string().min(1),
-  isBest: z.boolean(),
-  createdAt: dateAsIsoString,
-  updatedAt: dateAsIsoString,
-})
-
 export const questionListItemSchema = questionSchema.extend({
   answersCount: z.number().int().min(0),
   answers: z.array(answerPreviewSchema).optional(),
@@ -80,12 +78,7 @@ export const questionListItemSchema = questionSchema.extend({
 
 export const questionsListResponseSchema = z.object({
   items: z.array(questionListItemSchema),
-  pagination: z.object({
-    page: z.number().int().min(1),
-    limit: z.number().int().min(1),
-    total: z.number().int().min(0),
-    totalPages: z.number().int().min(0),
-  }),
+  pagination: paginationMetaSchema,
 })
 
 export class QuestionsListResponseDto extends createZodDto(questionsListResponseSchema, {

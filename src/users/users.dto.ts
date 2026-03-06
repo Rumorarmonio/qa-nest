@@ -1,8 +1,8 @@
 import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
-import { dateAsIsoString } from '@/common/schemas/date.schema'
 
-export const userRoleSchema = z.enum(['USER', 'ADMIN'])
+import { dateAsIsoString } from '@/common/schemas/date.schema'
+import { userRoleSchema } from '@/common/schemas/user.schema'
 
 export const userSchema = z.object({
   id: z.uuid(),
