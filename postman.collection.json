@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "1a79f8c7-a106-4f11-a43c-f240994d5704",
+    "_postman_id": "7925d9a2-1ae0-474d-afa9-45253cdb2302",
     "name": "QA Backend API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -19,6 +19,14 @@
     },
     {
       "key": "secondAnswerId",
+      "value": ""
+    },
+    {
+      "key": "seedQuestionId",
+      "value": ""
+    },
+    {
+      "key": "seedAnswerId",
       "value": ""
     },
     {
@@ -56,14 +64,42 @@
     {
       "key": "registeredToken",
       "value": ""
+    },
+    {
+      "key": "registeredUserId",
+      "value": ""
+    },
+    {
+      "key": "questionTitle",
+      "value": "How to implement best answer in NestJS?"
+    },
+    {
+      "key": "questionText",
+      "value": "Need one best answer, question pagination, and clear API tests."
+    },
+    {
+      "key": "updatedQuestionTitle",
+      "value": "How to implement best answer and Postman chaining in NestJS?"
+    },
+    {
+      "key": "updatedQuestionText",
+      "value": "Need JWT flow, saved IDs, pagination checks, and cleanup scenarios."
+    },
+    {
+      "key": "answerText",
+      "value": "Use a separate mark-best endpoint and verify it with integration tests."
+    },
+    {
+      "key": "updatedAnswerText",
+      "value": "Also verify authorization, reordering, and cleanup in Postman."
     }
   ],
   "item": [
     {
-      "name": "Auth (JWT testing)",
+      "name": "00 - Health",
       "item": [
         {
-          "name": "Health",
+          "name": "Health - GET /health",
           "request": {
             "method": "GET",
             "url": {
@@ -71,17 +107,58 @@
               "host": ["{{baseUrl}}"],
               "path": ["health"]
             }
-          }
-        },
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - Auth",
+      "item": [
         {
-          "name": "Auth - Register (new user)",
+          "name": "Register - unique user",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman User\",\n  \"email\": \"{{registeredEmail}}\",\n  \"password\": \"{{registeredPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
           "event": [
             {
               "listen": "prerequest",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const uniqueEmail = `newuser_${Date.now()}@example.com`;",
+                  "const uniqueEmail = `postman_${Date.now()}@example.com`;",
                   "pm.collectionVariables.set('registeredEmail', uniqueEmail);"
                 ]
               }
@@ -95,13 +172,22 @@
                   "const responseJson = pm.response.json();",
                   "pm.expect(responseJson).to.have.property('accessToken');",
                   "pm.expect(responseJson).to.have.property('user');",
-                  "pm.collectionVariables.set('registeredToken', responseJson.accessToken);"
+                  "pm.collectionVariables.set('registeredToken', responseJson.accessToken);",
+                  "if (responseJson.user?.id) { pm.collectionVariables.set('registeredUserId', responseJson.user.id); }"
                 ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "Login - seeded user",
           "request": {
             "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
             "header": [
               {
                 "key": "Content-Type",
@@ -110,17 +196,15 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Новый пользователь\",\n  \"email\": \"{{registeredEmail}}\",\n  \"password\": \"{{registeredPassword}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
+              "raw": "{\n  \"email\": \"{{seedUserEmail}}\",\n  \"password\": \"{{seedUserPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
-        },
-        {
-          "name": "Auth - Login (seed user)",
+          },
+          "response": [],
           "event": [
             {
               "listen": "test",
@@ -134,9 +218,17 @@
                 ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "Login - seeded admin",
           "request": {
             "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
             "header": [
               {
                 "key": "Content-Type",
@@ -145,17 +237,15 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{seedUserEmail}}\",\n  \"password\": \"{{seedUserPassword}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "raw": "{\n  \"email\": \"{{seedAdminEmail}}\",\n  \"password\": \"{{seedAdminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
-        },
-        {
-          "name": "Auth - Login (seed admin)",
+          },
+          "response": [],
           "event": [
             {
               "listen": "test",
@@ -169,100 +259,138 @@
                 ]
               }
             }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{seedAdminEmail}}\",\n  \"password\": \"{{seedAdminPassword}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
-            }
-          }
+          ]
         },
         {
-          "name": "Auth - Me (registered user token)",
+          "name": "Me - registered user token",
           "request": {
             "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{registeredToken}}"
               }
-            ],
+            ]
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.expect(responseJson).to.have.property('email');",
+                  "pm.expect(responseJson.email).to.eql(pm.collectionVariables.get('registeredEmail'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me - seeded user token",
+          "request": {
+            "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/auth/me",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "me"]
-            }
-          }
-        },
-        {
-          "name": "Auth - Me (seed user token)",
-          "request": {
-            "method": "GET",
+            },
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{userToken}}"
               }
-            ],
+            ]
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me - seeded admin token",
+          "request": {
+            "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/auth/me",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "me"]
-            }
-          }
-        },
-        {
-          "name": "Auth - Me (seed admin token)",
-          "request": {
-            "method": "GET",
+            },
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{adminToken}}"
               }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "me"]
+            ]
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Negative - Login wrong password",
+          "name": "Negative - login wrong password",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{seedUserEmail}}\",\n  \"password\": \"wrong-password\"\n}"
-            },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "login"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{seedUserEmail}}\",\n  \"password\": \"wrong-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401 or 400', function () { pm.expect([400, 401]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Negative - Me without token",
+          "name": "Negative - me without token",
           "request": {
             "method": "GET",
             "url": {
@@ -270,164 +398,27 @@
               "host": ["{{baseUrl}}"],
               "path": ["auth", "me"]
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Questions + Answers",
+      "name": "02 - Questions",
       "item": [
         {
-          "name": "Health",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
-            }
-          }
-        },
-        {
-          "name": "Negative - Questions Create without token (401)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Без токена\",\n  \"questionText\": \"Должно быть 401\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/questions",
-              "host": ["{{baseUrl}}"],
-              "path": ["questions"]
-            }
-          }
-        },
-        {
-          "name": "Questions - Create",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
-                  "const responseJson = pm.response.json();",
-                  "pm.expect(responseJson).to.have.property('id');",
-                  "pm.collectionVariables.set('questionId', responseJson.id);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Как реализовать best answer?\",\n  \"questionText\": \"Хочу один лучший ответ на вопрос и пагинацию списка вопросов.\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/questions",
-              "host": ["{{baseUrl}}"],
-              "path": ["questions"]
-            }
-          }
-        },
-        {
-          "name": "Answers - Create #1",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
-                  "const responseJson = pm.response.json();",
-                  "pm.expect(responseJson).to.have.property('id');",
-                  "pm.collectionVariables.set('answerId', responseJson.id);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"answerText\": \"Сделай отдельный endpoint mark-best и используй транзакцию.\",\n  \"isBest\": false\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
-              "host": ["{{baseUrl}}"],
-              "path": ["questions", "{{questionId}}", "answers"]
-            }
-          }
-        },
-        {
-          "name": "Answers - Create #2 (best=true)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
-                  "const responseJson = pm.response.json();",
-                  "pm.expect(responseJson).to.have.property('id');",
-                  "pm.collectionVariables.set('secondAnswerId', responseJson.id);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"answerText\": \"Добавь partial unique index в БД на лучший ответ.\",\n  \"isBest\": true\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
-              "host": ["{{baseUrl}}"],
-              "path": ["questions", "{{questionId}}", "answers"]
-            }
-          }
-        },
-        {
-          "name": "Questions - List (default, no answers)",
+          "name": "List - default",
           "request": {
             "method": "GET",
             "url": {
@@ -435,10 +426,26 @@
               "host": ["{{baseUrl}}"],
               "path": ["questions"]
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.expect(responseJson).to.have.property('items');",
+                  "pm.expect(responseJson.items).to.be.an('array');",
+                  "if (responseJson.items?.[0]?.id) { pm.collectionVariables.set('seedQuestionId', responseJson.items[0].id); }"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Questions - List (page=1, limit=5)",
+          "name": "List - page=1, limit=5",
           "request": {
             "method": "GET",
             "url": {
@@ -456,10 +463,22 @@
                 }
               ]
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Questions - List (page=2, limit=5)",
+          "name": "List - page=2, limit=5",
           "request": {
             "method": "GET",
             "url": {
@@ -477,10 +496,22 @@
                 }
               ]
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Questions - List (includeAnswers=true)",
+          "name": "List - includeAnswers=true",
           "request": {
             "method": "GET",
             "url": {
@@ -494,10 +525,22 @@
                 }
               ]
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Questions - List (includeAnswers=true, answersLimit=1)",
+          "name": "List - includeAnswers=true, answersLimit=1",
           "request": {
             "method": "GET",
             "url": {
@@ -515,10 +558,22 @@
                 }
               ]
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Questions - List (page + includeAnswers + answersLimit)",
+          "name": "List - page + includeAnswers + answersLimit",
           "request": {
             "method": "GET",
             "url": {
@@ -544,10 +599,92 @@
                 }
               ]
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Questions - Get by id",
+          "name": "Get - seeded question by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{seedQuestionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{seedQuestionId}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.expect(responseJson).to.have.property('id');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create - question as user",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"{{questionTitle}}\",\n  \"questionText\": \"{{questionText}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.expect(responseJson).to.have.property('id');",
+                  "pm.collectionVariables.set('questionId', responseJson.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get - created question by id",
           "request": {
             "method": "GET",
             "url": {
@@ -555,70 +692,106 @@
               "host": ["{{baseUrl}}"],
               "path": ["questions", "{{questionId}}"]
             }
-          }
-        },
-        {
-          "name": "Answers - List by question",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
-              "host": ["{{baseUrl}}"],
-              "path": ["questions", "{{questionId}}", "answers"]
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.expect(responseJson.id).to.eql(pm.collectionVariables.get('questionId'));"
+                ]
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Answers - Mark best (#1)",
+          "name": "Update - created question as user",
           "request": {
             "method": "PATCH",
             "url": {
-              "raw": "{{baseUrl}}/answers/{{answerId}}/mark-best",
+              "raw": "{{baseUrl}}/questions/{{questionId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["answers", "{{answerId}}", "mark-best"]
+              "path": ["questions", "{{questionId}}"]
             },
             "header": [
               {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
                 "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
+                "value": "Bearer {{userToken}}"
               }
-            ]
-          }
-        },
-        {
-          "name": "Answers - List by question (check best moved to #1)",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
-              "host": ["{{baseUrl}}"],
-              "path": ["questions", "{{questionId}}", "answers"]
-            }
-          }
-        },
-        {
-          "name": "Questions - List (includeAnswers=true, verify best order)",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/questions?includeAnswers=true&answersLimit=2",
-              "host": ["{{baseUrl}}"],
-              "path": ["questions"],
-              "query": [
-                {
-                  "key": "includeAnswers",
-                  "value": "true"
-                },
-                {
-                  "key": "answersLimit",
-                  "value": "2"
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"{{updatedQuestionTitle}}\",\n  \"questionText\": \"{{updatedQuestionText}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.expect(responseJson.title).to.eql(pm.collectionVariables.get('updatedQuestionTitle'));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Negative - Questions list invalid page",
+          "name": "Negative - create without token",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"No token\",\n  \"questionText\": \"Should fail with unauthorized.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Negative - list invalid page",
           "request": {
             "method": "GET",
             "url": {
@@ -636,10 +809,22 @@
                 }
               ]
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Negative - Questions list invalid answersLimit without includeAnswers",
+          "name": "Negative - answersLimit without includeAnswers",
           "request": {
             "method": "GET",
             "url": {
@@ -653,10 +838,377 @@
                 }
               ]
             }
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Cleanup - Delete answer #1",
+          "name": "Negative - delete question as user",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ]
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403 or 401', function () { pm.expect([401, 403]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Answers",
+      "item": [
+        {
+          "name": "List - answers by seeded question",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{seedQuestionId}}/answers",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{seedQuestionId}}", "answers"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "if (Array.isArray(responseJson) && responseJson[0]?.id) { pm.collectionVariables.set('seedAnswerId', responseJson[0].id); }",
+                  "if (responseJson.items?.[0]?.id) { pm.collectionVariables.set('seedAnswerId', responseJson.items[0].id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get - seeded answer by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/answers/{{seedAnswerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["answers", "{{seedAnswerId}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create - answer #1 for created question",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}", "answers"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answerText\": \"{{answerText}}\",\n  \"isBest\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.expect(responseJson).to.have.property('id');",
+                  "pm.collectionVariables.set('answerId', responseJson.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create - answer #2 for created question (best=true)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}", "answers"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answerText\": \"Second answer created to verify mark-best switching and ordering.\",\n  \"isBest\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.expect(responseJson).to.have.property('id');",
+                  "pm.collectionVariables.set('secondAnswerId', responseJson.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List - answers by created question",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}", "answers"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get - created answer by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/answers/{{answerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["answers", "{{answerId}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.expect(responseJson.id).to.eql(pm.collectionVariables.get('answerId'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update - created answer as user",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/answers/{{answerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["answers", "{{answerId}}"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answerText\": \"{{updatedAnswerText}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.expect(responseJson.answerText || responseJson.text || responseJson.answer?.answerText).to.exist;"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark best - answer #1 as admin",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/answers/{{answerId}}/mark-best",
+              "host": ["{{baseUrl}}"],
+              "path": ["answers", "{{answerId}}", "mark-best"]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ]
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List - answers by created question (verify best moved)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}/answers",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}", "answers"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Questions list - includeAnswers=true, verify best order",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/questions?includeAnswers=true&answersLimit=2",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"],
+              "query": [
+                {
+                  "key": "includeAnswers",
+                  "value": "true"
+                },
+                {
+                  "key": "answersLimit",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Cleanup",
+      "item": [
+        {
+          "name": "Delete - answer #1 as admin",
           "request": {
             "method": "DELETE",
             "url": {
@@ -670,10 +1222,30 @@
                 "value": "Bearer {{adminToken}}"
               }
             ]
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.test('Response has deleted boolean', function () {",
+                  "    pm.expect(responseJson).to.have.property('deleted');",
+                  "    pm.expect(responseJson.deleted).to.be.a('boolean');",
+                  "});",
+                  "pm.test('deleted is true or false', function () {",
+                  "    pm.expect([true, false]).to.include(responseJson.deleted);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Cleanup - Delete answer #2",
+          "name": "Delete - answer #2 as admin",
           "request": {
             "method": "DELETE",
             "url": {
@@ -687,27 +1259,30 @@
                 "value": "Bearer {{adminToken}}"
               }
             ]
-          }
-        },
-        {
-          "name": "Negative - Questions Delete as USER (403)",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.test('Response has deleted boolean', function () {",
+                  "    pm.expect(responseJson).to.have.property('deleted');",
+                  "    pm.expect(responseJson.deleted).to.be.a('boolean');",
+                  "});",
+                  "pm.test('deleted is true or false', function () {",
+                  "    pm.expect([true, false]).to.include(responseJson.deleted);",
+                  "});"
+                ]
               }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/questions/{{questionId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["questions", "{{questionId}}"]
             }
-          }
+          ]
         },
         {
-          "name": "Cleanup - Delete question",
+          "name": "Delete - question as admin",
           "request": {
             "method": "DELETE",
             "url": {
@@ -721,7 +1296,56 @@
                 "value": "Bearer {{adminToken}}"
               }
             ]
-          }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "const responseJson = pm.response.json();",
+                  "pm.test('Response has deleted boolean', function () {",
+                  "    pm.expect(responseJson).to.have.property('deleted');",
+                  "    pm.expect(responseJson.deleted).to.be.a('boolean');",
+                  "});",
+                  "pm.test('deleted is true or false', function () {",
+                  "    pm.expect([true, false]).to.include(responseJson.deleted);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "99 - Run order",
+      "item": [
+        {
+          "name": "README - suggested order",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://postman-echo.com/get",
+              "host": ["https:"],
+              "path": ["postman-echo.com", "get"]
+            },
+            "description": "Run in this order: 00 - Health -> 01 - Auth (register, login user, login admin, me checks) -> 02 - Questions (list, create, get, update, negative cases) -> 03 - Answers (list, create, get, update, mark best) -> 04 - Cleanup. Variables saved automatically: registeredToken, userToken, adminToken, seedQuestionId, seedAnswerId, questionId, answerId, secondAnswerId."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Helper request is reachable', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
         }
       ]
     }
