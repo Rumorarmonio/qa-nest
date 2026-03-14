@@ -1,0 +1,157 @@
+import { apiRoutes } from '@test/constants/api-routes'
+import { createAnswer, updateAnswer } from '@test/helpers/answers.helper'
+import { loginAsAdmin, loginAsUser } from '@test/helpers/auth.helper'
+import { createQuestion } from '@test/helpers/questions.helper'
+import { setupE2e } from '@test/helpers/setup-e2e'
+
+describe('Answers (e2e)', () => {
+  const { request } = setupE2e()
+
+  let userToken: string
+  let adminToken: string
+  let questionId: string
+
+  beforeAll(async () => {
+    const userLoginResponse = await loginAsUser(request)
+    const adminLoginResponse = await loginAsAdmin(request)
+
+    userToken = userLoginResponse.accessToken
+    adminToken = adminLoginResponse.accessToken
+
+    const createdQuestion = await createQuestion(request, userToken, {
+      title: 'Question for answers e2e',
+      questionText: 'Question text for answers e2e',
+    })
+
+    questionId = createdQuestion.id
+  })
+
+  it('GET /api/questions/:questionId/answers should return answers list', async () => {
+    const response = await request().get(apiRoutes.questions.answers(questionId)).expect(200)
+
+    expect(Array.isArray(response.body)).toBe(true)
+  })
+
+  it('POST /api/questions/:questionId/answers without token should return 401', async () => {
+    await request()
+      .post(apiRoutes.questions.createAnswer(questionId))
+      .send({
+        answerText: 'Unauthorized answer',
+      })
+      .expect(401)
+  })
+
+  it('POST /api/questions/:questionId/answers with user token should create an answer', async () => {
+    const response = await request()
+      .post(apiRoutes.questions.createAnswer(questionId))
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        answerText: 'Created from answers.e2e-spec.ts',
+      })
+      .expect(201)
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        questionId,
+        authorId: expect.any(String),
+        author: expect.objectContaining({
+          id: expect.any(String),
+          name: expect.any(String),
+        }),
+        answerText: 'Created from answers.e2e-spec.ts',
+        isBest: expect.any(Boolean),
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+      }),
+    )
+  })
+
+  it('GET /api/answers/:id should return answer by id', async () => {
+    const createdAnswer = await createAnswer(request, userToken, questionId, {
+      answerText: 'Answer for get by id',
+    })
+
+    const response = await request().get(apiRoutes.answers.byId(createdAnswer.id)).expect(200)
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: createdAnswer.id,
+        questionId,
+        answerText: 'Answer for get by id',
+      }),
+    )
+  })
+
+  it('PATCH /api/answers/:id with user token should update an answer', async () => {
+    const createdAnswer = await createAnswer(request, userToken, questionId, {
+      answerText: 'Answer before patch',
+    })
+
+    const updatedAnswer = await updateAnswer(request, userToken, createdAnswer.id, {
+      answerText: 'Answer after patch',
+    })
+
+    expect(updatedAnswer).toEqual(
+      expect.objectContaining({
+        id: createdAnswer.id,
+        answerText: 'Answer after patch',
+      }),
+    )
+  })
+
+  it('DELETE /api/answers/:id with admin token should delete an answer', async () => {
+    const createdAnswer = await createAnswer(request, userToken, questionId, {
+      answerText: 'Answer before delete',
+    })
+
+    await request()
+      .delete(apiRoutes.answers.remove(createdAnswer.id))
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200)
+
+    await request().get(apiRoutes.answers.byId(createdAnswer.id)).expect(404)
+  })
+
+  it('PATCH /api/answers/:id/mark-best with user token should return 403', async () => {
+    const createdAnswer = await createAnswer(request, userToken, questionId, {
+      answerText: 'Answer for forbidden mark-best',
+    })
+
+    await request()
+      .patch(apiRoutes.answers.markBest(createdAnswer.id))
+      .set('Authorization', `Bearer ${userToken}`)
+      .expect(403)
+  })
+
+  it('PATCH /api/answers/:id/mark-best with admin token should mark answer as best', async () => {
+    const firstAnswer = await createAnswer(request, userToken, questionId, {
+      answerText: 'First answer for mark-best',
+    })
+
+    const secondAnswer = await createAnswer(request, userToken, questionId, {
+      answerText: 'Second answer for mark-best',
+    })
+
+    await request()
+      .patch(apiRoutes.answers.markBest(firstAnswer.id))
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200)
+
+    await request()
+      .patch(apiRoutes.answers.markBest(secondAnswer.id))
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200)
+
+    const firstAnswerResponse = await request()
+      .get(apiRoutes.answers.byId(firstAnswer.id))
+      .expect(200)
+
+    const secondAnswerResponse = await request()
+      .get(apiRoutes.answers.byId(secondAnswer.id))
+      .expect(200)
+
+    expect(firstAnswerResponse.body.isBest).toBe(false)
+    expect(secondAnswerResponse.body.isBest).toBe(true)
+  })
+})
