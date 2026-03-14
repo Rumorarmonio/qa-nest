@@ -1,8 +1,21 @@
 import { apiRoutes } from '@test/constants/api-routes'
+import { loginAsAdmin, loginAsUser } from '@test/helpers/auth.helper'
+import { createQuestion, updateQuestion } from '@test/helpers/questions.helper'
 import { setupE2e } from '@test/helpers/setup-e2e'
 
 describe('Questions (e2e)', () => {
   const { request } = setupE2e()
+
+  let userToken: string
+  let adminToken: string
+
+  beforeAll(async () => {
+    const userLoginResponse = await loginAsUser(request)
+    const adminLoginResponse = await loginAsAdmin(request)
+
+    userToken = userLoginResponse.accessToken
+    adminToken = adminLoginResponse.accessToken
+  })
 
   it('GET /api/questions should return paginated questions list', async () => {
     const response = await request().get(apiRoutes.questions.list()).expect(200)
@@ -81,5 +94,98 @@ describe('Questions (e2e)', () => {
         expect(question.answers.length).toBeLessThanOrEqual(1)
       }
     }
+  })
+
+  it('POST /api/questions without token should return 401', async () => {
+    await request()
+      .post(apiRoutes.questions.create)
+      .send({
+        title: 'Unauthorized question',
+        questionText: 'Should not be created',
+      })
+      .expect(401)
+  })
+
+  it('POST /api/questions with user token should create a question', async () => {
+    const response = await request()
+      .post(apiRoutes.questions.create)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        title: 'Created from e2e',
+        questionText: 'Question created in questions.e2e-spec.ts',
+      })
+      .expect(201)
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        authorId: expect.any(String),
+        author: expect.objectContaining({
+          id: expect.any(String),
+          name: expect.any(String),
+        }),
+        title: 'Created from e2e',
+        questionText: 'Question created in questions.e2e-spec.ts',
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+      }),
+    )
+  })
+
+  it('PATCH /api/questions/:id without token should return 401', async () => {
+    const createdQuestion = await createQuestion(request, userToken, {
+      title: 'Question for unauthorized patch',
+      questionText: 'Before unauthorized patch',
+    })
+
+    await request()
+      .patch(apiRoutes.questions.update(createdQuestion.id))
+      .send({
+        title: 'Unauthorized patch title',
+      })
+      .expect(401)
+  })
+
+  it('PATCH /api/questions/:id with user token should update a question', async () => {
+    const createdQuestion = await createQuestion(request, userToken, {
+      title: 'Question before patch',
+      questionText: 'Question text before patch',
+    })
+
+    const updatedQuestion = await updateQuestion(request, userToken, createdQuestion.id, {
+      title: 'Question after patch',
+      questionText: 'Question text after patch',
+    })
+
+    expect(updatedQuestion).toEqual(
+      expect.objectContaining({
+        id: createdQuestion.id,
+        title: 'Question after patch',
+        questionText: 'Question text after patch',
+      }),
+    )
+  })
+
+  it('DELETE /api/questions/:id without token should return 401', async () => {
+    const createdQuestion = await createQuestion(request, userToken, {
+      title: 'Question for unauthorized delete',
+      questionText: 'Before unauthorized delete',
+    })
+
+    await request().delete(apiRoutes.questions.remove(createdQuestion.id)).expect(401)
+  })
+
+  it('DELETE /api/questions/:id with admin token should delete a question', async () => {
+    const createdQuestion = await createQuestion(request, userToken, {
+      title: 'Question before delete',
+      questionText: 'Question text before delete',
+    })
+
+    await request()
+      .delete(apiRoutes.questions.remove(createdQuestion.id))
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200)
+
+    await request().get(apiRoutes.questions.byId(createdQuestion.id)).expect(404)
   })
 })

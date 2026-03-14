@@ -2,7 +2,7 @@ import { seedUsers } from '@/shared/seed-data/users'
 import { apiRoutes } from '@test/constants/api-routes'
 import { setupE2e } from '@test/helpers/setup-e2e'
 
-type RequestFactory = ReturnType<typeof setupE2e>['request']
+export type RequestFactory = ReturnType<typeof setupE2e>['request']
 
 type LoginResponseBody = {
   accessToken: string
