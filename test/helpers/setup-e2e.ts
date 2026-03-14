@@ -1,9 +1,8 @@
 import type { INestApplication } from '@nestjs/common'
 import { Test, type TestingModule } from '@nestjs/testing'
 import request from 'supertest'
-
-import { API_PREFIX } from '@test/constants/api-routes'
 import { AppModule } from '@/app.module'
+import { API_PREFIX } from '@/shared/constants/api'
 
 type SetupE2eOptions = {
   useApiPrefix?: boolean

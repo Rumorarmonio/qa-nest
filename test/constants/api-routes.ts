@@ -1,5 +1,6 @@
-type PrimitiveQueryValue = string | number | boolean | null | undefined
+import { API_PREFIX_PATH } from '@/shared/constants/api'
 
+type PrimitiveQueryValue = string | number | boolean | null | undefined
 type QueryParams = Record<string, PrimitiveQueryValue>
 
 type QuestionsListQuery = {
@@ -8,9 +9,6 @@ type QuestionsListQuery = {
   includeAnswers?: boolean
   answersLimit?: number
 }
-
-export const API_PREFIX = 'api'
-export const API_PREFIX_PATH = `/${API_PREFIX}`
 
 function buildUrl(path: string, query?: QueryParams): string {
   if (!query) {

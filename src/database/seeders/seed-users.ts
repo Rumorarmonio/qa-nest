@@ -3,7 +3,9 @@ import 'dotenv/config'
 import * as bcrypt from 'bcrypt'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient, UserRole } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
+
+import { seedUsersList } from '@/shared/seed-data/users'
 
 const connectionString = process.env.DATABASE_URL
 
@@ -15,20 +17,6 @@ const pool = new Pool({ connectionString })
 const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
-type SeedUser = {
-  name: string
-  email: string
-  password: string
-  role: UserRole
-}
-
-const seedUsers: SeedUser[] = [
-  { name: 'User One', email: 'user1@example.com', password: 'Password123!', role: UserRole.USER },
-  { name: 'User Two', email: 'user2@example.com', password: 'Password123!', role: UserRole.USER },
-  { name: 'User Three', email: 'user3@example.com', password: 'Password123!', role: UserRole.USER },
-  { name: 'Admin', email: 'admin@example.com', password: 'Password123!', role: UserRole.ADMIN },
-]
-
 async function seedUsersReset(): Promise<void> {
   try {
     await prisma.answer.deleteMany()
@@ -36,7 +24,7 @@ async function seedUsersReset(): Promise<void> {
     await prisma.user.deleteMany()
 
     const usersData = await Promise.all(
-      seedUsers.map(async (user) => ({
+      seedUsersList.map(async (user) => ({
         name: user.name,
         email: user.email.toLowerCase(),
         passwordHash: await bcrypt.hash(user.password, 10),

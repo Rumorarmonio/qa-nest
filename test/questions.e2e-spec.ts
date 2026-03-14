@@ -22,12 +22,7 @@ describe('Questions (e2e)', () => {
 
   it('GET /api/questions?page=1&limit=5 should return no more than 5 items', async () => {
     const response = await request()
-      .get(
-        apiRoutes.questions.list({
-          page: 1,
-          limit: 5,
-        }),
-      )
+      .get(apiRoutes.questions.list({ page: 1, limit: 5 }))
       .expect(200)
 
     expect(response.body.pagination).toEqual(
@@ -41,13 +36,9 @@ describe('Questions (e2e)', () => {
     expect(response.body.items.length).toBeLessThanOrEqual(5)
   })
 
-  it('GET /api/questions with includeAnswers=true should return paginated questions list', async () => {
+  it('GET /api/questions?includeAnswers=true should return paginated questions list', async () => {
     const response = await request()
-      .get(
-        apiRoutes.questions.list({
-          includeAnswers: true,
-        }),
-      )
+      .get(apiRoutes.questions.list({ includeAnswers: true }))
       .expect(200)
 
     expect(response.body).toEqual(
@@ -63,7 +54,7 @@ describe('Questions (e2e)', () => {
     )
   })
 
-  it('GET /api/questions with includeAnswers=true&answersLimit=1 should return paginated questions list', async () => {
+  it('GET /api/questions?includeAnswers=true&answersLimit=1 should limit nested answers', async () => {
     const response = await request()
       .get(
         apiRoutes.questions.list({

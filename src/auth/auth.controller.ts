@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 import { ZodResponse } from 'nestjs-zod'
 
@@ -21,6 +21,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(200)
   @ZodResponse({ type: AuthResponseDto })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto)
