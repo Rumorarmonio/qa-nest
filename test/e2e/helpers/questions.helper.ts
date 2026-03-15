@@ -1,5 +1,5 @@
-import { apiRoutes } from '@test/constants/api-routes'
-import type { RequestFactory } from '@test/helpers/auth.helper'
+import { apiRoutes } from '@test/e2e/api/api-routes'
+import type { RequestFactory } from '@test/e2e/helpers/auth.helper'
 
 type CreateQuestionPayload = {
   title: string
@@ -21,6 +21,8 @@ type CreateQuestionResponseBody = {
 
 type UpdateQuestionPayload = Partial<CreateQuestionPayload>
 
+const { questions } = apiRoutes
+
 export async function createQuestion(
   request: RequestFactory,
   accessToken: string,
@@ -33,7 +35,7 @@ export async function createQuestion(
   }
 
   const response = await request()
-    .post(apiRoutes.questions.create)
+    .post(questions.create.path)
     .set('Authorization', `Bearer ${accessToken}`)
     .send(payload)
     .expect(201)
@@ -48,7 +50,7 @@ export async function updateQuestion(
   payload: UpdateQuestionPayload,
 ): Promise<CreateQuestionResponseBody> {
   const response = await request()
-    .patch(apiRoutes.questions.update(questionId))
+    .patch(questions.update.build(questionId))
     .set('Authorization', `Bearer ${accessToken}`)
     .send(payload)
     .expect(200)

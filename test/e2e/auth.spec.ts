@@ -1,14 +1,17 @@
 import { seedUsers } from '@/shared/seed-data/users'
-import { apiRoutes } from '@test/constants/api-routes'
-import { loginAsAdmin, loginAsUser } from '@test/helpers/auth.helper'
-import { setupE2e } from '@test/helpers/setup-e2e'
+import { apiRoutes } from '@test/e2e/api/api-routes'
+import { testRoute } from '@test/e2e/api/test-route'
+import { loginAsAdmin, loginAsUser } from '@test/e2e/helpers/auth.helper'
+import { setupE2e } from '@test/e2e/helpers/setup-e2e'
+
+const { auth } = apiRoutes
 
 describe('Auth (e2e)', () => {
   const { request } = setupE2e()
 
-  it('POST /api/auth/login should login seeded user', async () => {
+  testRoute(auth.login, 'should login seeded user', async () => {
     const response = await request()
-      .post(apiRoutes.auth.login)
+      .post(auth.login.path)
       .send({
         email: seedUsers.user1.email,
         password: seedUsers.user1.password,
@@ -28,9 +31,9 @@ describe('Auth (e2e)', () => {
     )
   })
 
-  it('POST /api/auth/login should login seeded admin', async () => {
+  testRoute(auth.login, 'should login seeded admin', async () => {
     const response = await request()
-      .post(apiRoutes.auth.login)
+      .post(auth.login.path)
       .send({
         email: seedUsers.admin.email,
         password: seedUsers.admin.password,
@@ -50,11 +53,11 @@ describe('Auth (e2e)', () => {
     )
   })
 
-  it('GET /api/auth/me should return current seeded user', async () => {
+  testRoute(auth.me, 'should return current seeded user', async () => {
     const loginResponse = await loginAsUser(request)
 
     const response = await request()
-      .get(apiRoutes.auth.me)
+      .get(auth.me.path)
       .set('Authorization', `Bearer ${loginResponse.accessToken}`)
       .expect(200)
 
@@ -68,11 +71,11 @@ describe('Auth (e2e)', () => {
     )
   })
 
-  it('GET /api/auth/me should return current seeded admin', async () => {
+  testRoute(auth.me, 'should return current seeded admin', async () => {
     const loginResponse = await loginAsAdmin(request)
 
     const response = await request()
-      .get(apiRoutes.auth.me)
+      .get(auth.me.path)
       .set('Authorization', `Bearer ${loginResponse.accessToken}`)
       .expect(200)
 
@@ -86,13 +89,13 @@ describe('Auth (e2e)', () => {
     )
   })
 
-  it('GET /api/auth/me without token should return 401', async () => {
-    await request().get(apiRoutes.auth.me).expect(401)
+  testRoute(auth.me, 'without token should return 401', async () => {
+    await request().get(auth.me.path).expect(401)
   })
 
-  it('POST /api/auth/login with wrong password should return 401', async () => {
+  testRoute(auth.login, 'with wrong password should return 401', async () => {
     await request()
-      .post(apiRoutes.auth.login)
+      .post(auth.login.path)
       .send({
         email: seedUsers.user1.email,
         password: 'WrongPassword123!',
@@ -100,7 +103,7 @@ describe('Auth (e2e)', () => {
       .expect(401)
   })
 
-  it('POST /api/auth/register should create a new user', async () => {
+  testRoute(auth.register, 'should create a new user', async () => {
     const uniqueSuffix = Date.now()
 
     const registerPayload = {
@@ -109,7 +112,7 @@ describe('Auth (e2e)', () => {
       password: 'Password123!',
     }
 
-    const response = await request().post(apiRoutes.auth.register).send(registerPayload).expect(201)
+    const response = await request().post(auth.register.path).send(registerPayload).expect(201)
 
     expect(response.body).toEqual(
       expect.objectContaining({
@@ -124,9 +127,9 @@ describe('Auth (e2e)', () => {
     )
   })
 
-  it('POST /api/auth/register with existing email should return 409', async () => {
+  testRoute(auth.register, 'with existing email should return 409', async () => {
     await request()
-      .post(apiRoutes.auth.register)
+      .post(auth.register.path)
       .send({
         name: 'Duplicate User',
         email: seedUsers.user1.email,
