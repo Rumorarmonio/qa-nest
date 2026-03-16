@@ -201,4 +201,4 @@ docker compose up -d --force-recreate adminer
 
 TODO:
 
-Автоматизировать формирование и получение строк типа "GET /api/questions/:questionId/answers" вместе с именами параметров в тестах.
+Тестовая БД для данных для тестирования.
