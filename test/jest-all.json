@@ -1,0 +1,7 @@
+{
+  "projects": [
+    "<rootDir>/jest-unit.json",
+    "<rootDir>/jest-integration.json",
+    "<rootDir>/jest-e2e.json"
+  ]
+}
