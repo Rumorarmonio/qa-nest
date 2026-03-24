@@ -40,7 +40,7 @@ describe('QuestionsService (integration)', () => {
     await testingModule.close()
   })
 
-  it.skip('findAll should return paginated questions list without answers by default', async () => {
+  it('findAll should return paginated questions list without answers by default', async () => {
     const user = await createIntegrationUser(prismaService, 'questions-find-all-1')
 
     const firstQuestion = await createIntegrationQuestion(prismaService, user.id, '1')
@@ -83,7 +83,7 @@ describe('QuestionsService (integration)', () => {
     }
   })
 
-  it.skip('findAll should include answers and respect answersLimit', async () => {
+  it('findAll should include answers and respect answersLimit', async () => {
     const user = await createIntegrationUser(prismaService, 'questions-find-all-2')
     const question = await createIntegrationQuestion(prismaService, user.id, 'with-answers')
 
@@ -154,7 +154,7 @@ describe('QuestionsService (integration)', () => {
     expect(targetQuestion?.answers?.[2].id).toBe(regularLater.id)
   })
 
-  it.skip('findOneOrThrow should return question with author', async () => {
+  it('findOneOrThrow should return question with author', async () => {
     const user = await createIntegrationUser(prismaService, 'questions-find-one')
     const question = await createIntegrationQuestion(prismaService, user.id, 'find-one')
 
@@ -173,7 +173,7 @@ describe('QuestionsService (integration)', () => {
     )
   })
 
-  it.skip('findOneOrThrow should throw NotFoundException for missing question', async () => {
+  it('findOneOrThrow should throw NotFoundException for missing question', async () => {
     await expect(questionsService.findOneOrThrow(NON_EXISTING_UUID)).rejects.toThrow(
       NotFoundException,
     )

@@ -39,7 +39,7 @@ describe('AnswersService (integration)', () => {
     await testingModule.close()
   })
 
-  it.skip('markBest should mark selected answer as best', async () => {
+  it('markBest should mark selected answer as best', async () => {
     const user = await createIntegrationUser(prismaService, 'user-1')
     const question = await createIntegrationQuestion(prismaService, user.id, '1')
 
@@ -72,7 +72,7 @@ describe('AnswersService (integration)', () => {
     expect(answers.find((answer) => answer.id === secondAnswer.id)?.isBest).toBe(true)
   })
 
-  it.skip('markBest should unset previous best answer in the same question', async () => {
+  it('markBest should unset previous best answer in the same question', async () => {
     const user = await createIntegrationUser(prismaService, 'user-2')
     const question = await createIntegrationQuestion(prismaService, user.id, '2')
 
@@ -105,7 +105,7 @@ describe('AnswersService (integration)', () => {
     expect(answers.find((answer) => answer.id === secondAnswer.id)?.isBest).toBe(true)
   })
 
-  it.skip('markBest should affect only answers of the same question', async () => {
+  it('markBest should affect only answers of the same question', async () => {
     const user = await createIntegrationUser(prismaService, 'user-3')
 
     const firstQuestion = await createIntegrationQuestion(prismaService, user.id, '3')
