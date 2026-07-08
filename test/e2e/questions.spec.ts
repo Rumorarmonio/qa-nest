@@ -1,26 +1,30 @@
 import { randomUUID } from 'node:crypto'
 
+import { seedUsers } from '@/shared/seed-data/users'
 import { apiRoutes } from '@test/e2e/api/api-routes'
 import { testRoute } from '@test/e2e/api/test-route'
-import { loginAsAdmin, loginAsUser } from '@test/e2e/helpers/auth.helper'
-import { createQuestion, updateQuestion } from '@test/e2e/helpers/questions.helper'
+import { createE2eHelpers } from '@test/e2e/helpers/e2e.helpers'
 import { setupE2e } from '@test/e2e/helpers/setup-e2e'
 
 const { questions } = apiRoutes
 
 describe('Questions (e2e)', () => {
   const { request } = setupE2e()
+  const helpers = createE2eHelpers(request)
 
   let userToken: string
+  let otherUserToken: string
   let adminToken: string
 
   const invalidUuid = 'not-a-uuid'
 
   beforeAll(async () => {
-    const userLoginResponse = await loginAsUser(request)
-    const adminLoginResponse = await loginAsAdmin(request)
+    const userLoginResponse = await helpers.auth.loginAsUser()
+    const otherUserLoginResponse = await helpers.auth.loginAs(seedUsers.user2)
+    const adminLoginResponse = await helpers.auth.loginAsAdmin()
 
     userToken = userLoginResponse.accessToken
+    otherUserToken = otherUserLoginResponse.accessToken
     adminToken = adminLoginResponse.accessToken
   })
 
@@ -117,7 +121,7 @@ describe('Questions (e2e)', () => {
     )
 
     testRoute(questions.getById, 'should return question by id', async () => {
-      const createdQuestion = await createQuestion(request, userToken, {
+      const createdQuestion = await helpers.questions.createQuestion(userToken, {
         title: 'Question for get by id',
         questionText: 'Question text for get by id',
       })
@@ -241,7 +245,7 @@ describe('Questions (e2e)', () => {
     })
 
     testRoute(questions.update, 'without token should return 401', async () => {
-      const createdQuestion = await createQuestion(request, userToken, {
+      const createdQuestion = await helpers.questions.createQuestion(userToken, {
         title: 'Question for unauthorized patch',
         questionText: 'Before unauthorized patch',
       })
@@ -277,7 +281,7 @@ describe('Questions (e2e)', () => {
     })
 
     testRoute(questions.update, 'with invalid body should return 400', async () => {
-      const createdQuestion = await createQuestion(request, userToken, {
+      const createdQuestion = await helpers.questions.createQuestion(userToken, {
         title: 'Question before invalid patch',
         questionText: 'Question text before invalid patch',
       })
@@ -293,12 +297,12 @@ describe('Questions (e2e)', () => {
     })
 
     testRoute(questions.update, 'with user token should update a question', async () => {
-      const createdQuestion = await createQuestion(request, userToken, {
+      const createdQuestion = await helpers.questions.createQuestion(userToken, {
         title: 'Question before patch',
         questionText: 'Question text before patch',
       })
 
-      const updatedQuestion = await updateQuestion(request, userToken, createdQuestion.id, {
+      const updatedQuestion = await helpers.questions.updateQuestion(userToken, createdQuestion.id, {
         title: 'Question after patch',
         questionText: 'Question text after patch',
       })
@@ -312,8 +316,23 @@ describe('Questions (e2e)', () => {
       )
     })
 
+    testRoute(questions.update, 'with another user token should return 403', async () => {
+      const createdQuestion = await helpers.questions.createQuestion(userToken, {
+        title: 'Question before forbidden patch',
+        questionText: 'Question text before forbidden patch',
+      })
+
+      await request()
+        .patch(questions.update.build(createdQuestion.id))
+        .set('Authorization', `Bearer ${otherUserToken}`)
+        .send({
+          title: 'Forbidden patch title',
+        })
+        .expect(403)
+    })
+
     testRoute(questions.remove, 'without token should return 401', async () => {
-      const createdQuestion = await createQuestion(request, userToken, {
+      const createdQuestion = await helpers.questions.createQuestion(userToken, {
         title: 'Question for unauthorized delete',
         questionText: 'Before unauthorized delete',
       })
@@ -346,7 +365,7 @@ describe('Questions (e2e)', () => {
     )
 
     testRoute(questions.remove, 'with admin token should delete a question', async () => {
-      const createdQuestion = await createQuestion(request, userToken, {
+      const createdQuestion = await helpers.questions.createQuestion(userToken, {
         title: 'Question before delete',
         questionText: 'Question text before delete',
       })

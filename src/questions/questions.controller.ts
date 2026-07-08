@@ -17,7 +17,7 @@ import {
   UpdateQuestionDto,
 } from '@/questions/questions.dto'
 import { QuestionsService } from '@/questions/questions.service'
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client'
 
 @ApiTags('questions')
 @Controller('questions')
@@ -50,8 +50,12 @@ export class QuestionsController {
   @Roles(UserRole.USER, UserRole.ADMIN)
   @ApiBearerAuth()
   @ZodResponse({ type: QuestionDto })
-  update(@Param() params: QuestionIdParamDto, @Body() dto: UpdateQuestionDto) {
-    return this.questionsService.update(params.id, dto)
+  update(
+    @Param() params: QuestionIdParamDto,
+    @Body() dto: UpdateQuestionDto,
+    @CurrentUser() currentUser: JwtPayload,
+  ) {
+    return this.questionsService.update(params.id, dto, currentUser)
   }
 
   @Delete(':id')

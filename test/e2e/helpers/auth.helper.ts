@@ -4,24 +4,36 @@ import { setupE2e } from '@test/e2e/helpers/setup-e2e'
 
 export type RequestFactory = ReturnType<typeof setupE2e>['request']
 
-type LoginResponseBody = {
+export type LoginResponseUser = {
+  id: string
+  email: string
+  name: string
+  role: string
+}
+
+export type LoginResponseBody = {
   accessToken: string
-  user: {
-    id: string
-    email: string
-    name: string
-    role: string
-  }
+  user: LoginResponseUser
 }
 
 const { auth } = apiRoutes
 
-async function login(
+export type LoginCredentials = {
+  email: string
+  password: string
+}
+
+export type LoginAsFn = (credentials: LoginCredentials) => Promise<LoginResponseBody>
+
+export type AuthHelpers = {
+  loginAs: LoginAsFn
+  loginAsAdmin: () => Promise<LoginResponseBody>
+  loginAsUser: () => Promise<LoginResponseBody>
+}
+
+export async function loginAs(
   request: RequestFactory,
-  credentials: {
-    email: string
-    password: string
-  },
+  credentials: LoginCredentials,
 ): Promise<LoginResponseBody> {
   const response = await request()
     .post(auth.login.path)
@@ -34,16 +46,24 @@ async function login(
   return response.body as LoginResponseBody
 }
 
-export async function loginAsAdmin(request: RequestFactory): Promise<LoginResponseBody> {
-  return login(request, {
+async function loginAsAdmin(request: RequestFactory): Promise<LoginResponseBody> {
+  return loginAs(request, {
     email: seedUsers.admin.email,
     password: seedUsers.admin.password,
   })
 }
 
-export async function loginAsUser(request: RequestFactory): Promise<LoginResponseBody> {
-  return login(request, {
+async function loginAsUser(request: RequestFactory): Promise<LoginResponseBody> {
+  return loginAs(request, {
     email: seedUsers.user1.email,
     password: seedUsers.user1.password,
   })
+}
+
+export function createAuthHelpers(request: RequestFactory): AuthHelpers {
+  return {
+    loginAs: (credentials: LoginCredentials) => loginAs(request, credentials),
+    loginAsAdmin: () => loginAsAdmin(request),
+    loginAsUser: () => loginAsUser(request),
+  }
 }

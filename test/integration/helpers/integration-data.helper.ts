@@ -1,6 +1,11 @@
+import { PrismaService } from '@/prisma/prisma.service'
 import { UserRole } from '@prisma/client'
 
-import { PrismaService } from '@/prisma/prisma.service'
+import {
+  type CreateIntegrationAnswerOptions,
+  type CreateIntegrationQuestionOverrides,
+  type IntegrationHelpers,
+} from './integration-data.types'
 
 export const INTEGRATION_NAMESPACE = 'int'
 export const INTEGRATION_TITLE_PREFIX = `[${INTEGRATION_NAMESPACE}]`
@@ -8,18 +13,7 @@ export const INTEGRATION_EMAIL_PREFIX = `${INTEGRATION_NAMESPACE}-`
 export const INTEGRATION_PASSWORD_HASH = 'integration-test-password-hash'
 export const NON_EXISTING_UUID = '00000000-0000-4000-8000-000000000000'
 
-type CreateIntegrationQuestionOverrides = Partial<{
-  title: string
-  questionText: string
-  createdAt: Date
-}>
-
-type CreateIntegrationAnswerOptions = {
-  isBest?: boolean
-  createdAt?: Date
-}
-
-export async function cleanupIntegrationData(prismaService: PrismaService): Promise<void> {
+async function cleanupIntegrationData(prismaService: PrismaService): Promise<void> {
   await prismaService.answer.deleteMany({
     where: {
       question: {
@@ -47,7 +41,7 @@ export async function cleanupIntegrationData(prismaService: PrismaService): Prom
   })
 }
 
-export async function createIntegrationUser(
+async function createIntegrationUser(
   prismaService: PrismaService,
   suffix: string,
   name = 'Integration User',
@@ -62,7 +56,7 @@ export async function createIntegrationUser(
   })
 }
 
-export async function createIntegrationQuestion(
+async function createIntegrationQuestion(
   prismaService: PrismaService,
   authorId: string,
   suffix: string,
@@ -78,7 +72,7 @@ export async function createIntegrationQuestion(
   })
 }
 
-export async function createIntegrationAnswer(
+async function createIntegrationAnswer(
   prismaService: PrismaService,
   questionId: string,
   authorId: string,
@@ -104,4 +98,16 @@ export async function createIntegrationAnswer(
       },
     },
   })
+}
+
+export function createIntegrationHelpers(prismaService: PrismaService): IntegrationHelpers {
+  return {
+    cleanup: () => cleanupIntegrationData(prismaService),
+    createUser: (suffix: string, name = 'Integration User') =>
+      createIntegrationUser(prismaService, suffix, name),
+    createQuestion: (authorId: string, suffix: string, overrides = {}) =>
+      createIntegrationQuestion(prismaService, authorId, suffix, overrides),
+    createAnswer: (questionId: string, authorId: string, answerText: string, options = {}) =>
+      createIntegrationAnswer(prismaService, questionId, authorId, answerText, options),
+  }
 }

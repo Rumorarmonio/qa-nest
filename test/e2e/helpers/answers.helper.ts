@@ -1,11 +1,11 @@
 import { apiRoutes } from '@test/e2e/api/api-routes'
 import type { RequestFactory } from '@test/e2e/helpers/auth.helper'
 
-type CreateAnswerPayload = {
+export type CreateAnswerPayload = {
   answerText: string
 }
 
-type CreateAnswerResponseBody = {
+export type CreateAnswerResponseBody = {
   id: string
   questionId: string
   authorId: string
@@ -19,11 +19,28 @@ type CreateAnswerResponseBody = {
   updatedAt: string
 }
 
-type UpdateAnswerPayload = Partial<CreateAnswerPayload>
+export type UpdateAnswerPayload = Partial<CreateAnswerPayload>
+
+export type CreateAnswerFn = (
+  accessToken: string,
+  questionId: string,
+  overrides?: Partial<CreateAnswerPayload>,
+) => Promise<CreateAnswerResponseBody>
+
+export type UpdateAnswerFn = (
+  accessToken: string,
+  answerId: string,
+  payload: UpdateAnswerPayload,
+) => Promise<CreateAnswerResponseBody>
+
+export type AnswerHelpers = {
+  createAnswer: CreateAnswerFn
+  updateAnswer: UpdateAnswerFn
+}
 
 const { questions, answers } = apiRoutes
 
-export async function createAnswer(
+async function createAnswer(
   request: RequestFactory,
   accessToken: string,
   questionId: string,
@@ -43,7 +60,7 @@ export async function createAnswer(
   return response.body as CreateAnswerResponseBody
 }
 
-export async function updateAnswer(
+async function updateAnswer(
   request: RequestFactory,
   accessToken: string,
   answerId: string,
@@ -56,4 +73,13 @@ export async function updateAnswer(
     .expect(200)
 
   return response.body as CreateAnswerResponseBody
+}
+
+export function createAnswerHelpers(request: RequestFactory): AnswerHelpers {
+  return {
+    createAnswer: (accessToken, questionId, overrides) =>
+      createAnswer(request, accessToken, questionId, overrides),
+    updateAnswer: (accessToken, answerId, payload) =>
+      updateAnswer(request, accessToken, answerId, payload),
+  }
 }

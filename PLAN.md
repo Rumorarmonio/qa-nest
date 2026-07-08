@@ -16,10 +16,10 @@ QA Backend - учебный backend на NestJS + Prisma + PostgreSQL для с�
 
 ## Статус этапов
 
-- Этап 1 — не начат
+- Этап 1 — в процессе: ownership rules для update questions/answers зафиксированы в сервисах и покрыты тестами; тестовые helpers переведены на фабрики; e2e helper-слой собран в единый `createE2eHelpers`; integration-тесты получили `setupIntegration`; осталось добрать remaining edge cases вокруг best answer и затем двигаться к админке
 - Этап 2 — не начат
 - Этап 3 — не начат
 
 ## Следующий этап
 
-Начать с этапа 1: зафиксировать ownership rules, добить DB-constraint для best answer и расширить/уточнить тесты под эти правила.
+Завершить остатки этапа 1: проверить и при необходимости добрать edge cases для best answer, затем перейти к минимальному scope админки.

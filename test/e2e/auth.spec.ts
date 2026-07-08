@@ -1,13 +1,14 @@
 import { seedUsers } from '@/shared/seed-data/users'
 import { apiRoutes } from '@test/e2e/api/api-routes'
 import { testRoute } from '@test/e2e/api/test-route'
-import { loginAsAdmin, loginAsUser } from '@test/e2e/helpers/auth.helper'
+import { createE2eHelpers } from '@test/e2e/helpers/e2e.helpers'
 import { setupE2e } from '@test/e2e/helpers/setup-e2e'
 
 const { auth } = apiRoutes
 
 describe('Auth (e2e)', () => {
   const { request } = setupE2e()
+  const helpers = createE2eHelpers(request)
 
   testRoute(auth.login, 'should login seeded user', async () => {
     const response = await request()
@@ -54,7 +55,7 @@ describe('Auth (e2e)', () => {
   })
 
   testRoute(auth.me, 'should return current seeded user', async () => {
-    const loginResponse = await loginAsUser(request)
+    const loginResponse = await helpers.auth.loginAsUser()
 
     const response = await request()
       .get(auth.me.path)
@@ -72,7 +73,7 @@ describe('Auth (e2e)', () => {
   })
 
   testRoute(auth.me, 'should return current seeded admin', async () => {
-    const loginResponse = await loginAsAdmin(request)
+    const loginResponse = await helpers.auth.loginAsAdmin()
 
     const response = await request()
       .get(auth.me.path)

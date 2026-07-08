@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import { UserRole } from '@prisma/client'
 
+import type { JwtPayload } from '@/auth/jwt-payload.type'
 import { PrismaService } from '@/prisma/prisma.service'
 import { CreateAnswerDto, UpdateAnswerDto } from '@/answers/answers.dto'
 
@@ -71,7 +73,20 @@ export class AnswersService {
     return created
   }
 
-  async update(id: string, dto: UpdateAnswerDto) {
+  async update(id: string, dto: UpdateAnswerDto, currentUser: JwtPayload) {
+    const answer = await this.prismaService.answer.findUnique({
+      where: { id },
+      select: { id: true, authorId: true },
+    })
+
+    if (!answer) {
+      throw new NotFoundException(`Answer ${id} not found`)
+    }
+
+    if (answer.authorId !== currentUser.sub && currentUser.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('You can only update your own answer')
+    }
+
     try {
       return await this.prismaService.answer.update({
         where: { id },

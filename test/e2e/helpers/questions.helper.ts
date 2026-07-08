@@ -1,12 +1,12 @@
 import { apiRoutes } from '@test/e2e/api/api-routes'
 import type { RequestFactory } from '@test/e2e/helpers/auth.helper'
 
-type CreateQuestionPayload = {
+export type CreateQuestionPayload = {
   title: string
   questionText: string
 }
 
-type CreateQuestionResponseBody = {
+export type CreateQuestionResponseBody = {
   id: string
   authorId: string
   author: {
@@ -19,11 +19,27 @@ type CreateQuestionResponseBody = {
   updatedAt: string
 }
 
-type UpdateQuestionPayload = Partial<CreateQuestionPayload>
+export type UpdateQuestionPayload = Partial<CreateQuestionPayload>
+
+export type CreateQuestionFn = (
+  accessToken: string,
+  overrides?: Partial<CreateQuestionPayload>,
+) => Promise<CreateQuestionResponseBody>
+
+export type UpdateQuestionFn = (
+  accessToken: string,
+  questionId: string,
+  payload: UpdateQuestionPayload,
+) => Promise<CreateQuestionResponseBody>
+
+export type QuestionHelpers = {
+  createQuestion: CreateQuestionFn
+  updateQuestion: UpdateQuestionFn
+}
 
 const { questions } = apiRoutes
 
-export async function createQuestion(
+async function createQuestion(
   request: RequestFactory,
   accessToken: string,
   overrides: Partial<CreateQuestionPayload> = {},
@@ -43,7 +59,7 @@ export async function createQuestion(
   return response.body as CreateQuestionResponseBody
 }
 
-export async function updateQuestion(
+async function updateQuestion(
   request: RequestFactory,
   accessToken: string,
   questionId: string,
@@ -56,4 +72,12 @@ export async function updateQuestion(
     .expect(200)
 
   return response.body as CreateQuestionResponseBody
+}
+
+export function createQuestionHelpers(request: RequestFactory): QuestionHelpers {
+  return {
+    createQuestion: (accessToken, overrides) => createQuestion(request, accessToken, overrides),
+    updateQuestion: (accessToken, questionId, payload) =>
+      updateQuestion(request, accessToken, questionId, payload),
+  }
 }

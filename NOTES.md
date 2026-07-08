@@ -30,6 +30,10 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 - Реализованы модули auth, questions, answers, users, prisma, health.
 - Есть регистрация, логин и `me` по JWT.
 - Есть CRUD для вопросов и ответов, включая пагинацию, nested answers и mark-best.
+- Для `update` у questions и answers уже зафиксированы ownership rules: редактировать может автор или ADMIN.
+- Тестовые helpers для integration и e2e сведены в фабрики с привязанными `prismaService`/`request`.
+- Для e2e есть единый `createE2eHelpers(request)`-слой с namespace-доступом `helpers.auth/questions/answers`.
+- Для integration есть `setupIntegration(...)`, который берёт на себя lifecycle module/prisma/cleanup и отдаёт `ctx` через getters.
 - Есть сидеры users, questions и answers.
 - Есть Swagger/OpenAPI.
 - Есть e2e, integration и unit тестовая инфраструктура.
@@ -38,11 +42,10 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 
 ## Текущие проблемы / открытые вопросы
 
-- Нужно формально зафиксировать ownership rules в сервисах и тестах.
-- Нужно добавить DB-level constraint для единственного best answer.
 - Нужно определить минимальный scope первой версии админки.
 - Нужно решить, какие из расширяющих фич первыми пойдут после стабилизации backend: поиск, фильтрация, теги, комментарии, лайки, уведомления.
+- DB-level constraint для единственного best answer уже есть в initial migration, но при дальнейшем изменении схемы его важно не потерять.
 
 ## Следующий шаг
 
-Начать с этапа стабилизации API: ownership rules, constraint для best answer, тесты на критичные сценарии, затем перейти к админке.
+Продолжить этап стабилизации API: добрать remaining coverage вокруг best answer/edge cases и затем переходить к минимальному scope админки.

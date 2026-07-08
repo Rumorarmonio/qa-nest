@@ -53,8 +53,12 @@ export class AnswersController {
   @Roles(UserRole.USER, UserRole.ADMIN)
   @ApiBearerAuth()
   @ZodResponse({ type: AnswerDto })
-  update(@Param() params: AnswerIdParamDto, @Body() dto: UpdateAnswerDto) {
-    return this.answersService.update(params.id, dto)
+  update(
+    @Param() params: AnswerIdParamDto,
+    @Body() dto: UpdateAnswerDto,
+    @CurrentUser() currentUser: JwtPayload,
+  ) {
+    return this.answersService.update(params.id, dto, currentUser)
   }
 
   @Patch('answers/:id/mark-best')

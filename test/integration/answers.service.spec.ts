@@ -1,61 +1,34 @@
-import { NotFoundException } from '@nestjs/common'
-import { Test, TestingModule } from '@nestjs/testing'
+import { ForbiddenException, NotFoundException } from '@nestjs/common'
+import { UserRole } from '@prisma/client'
 
 import { AnswersService } from '@/answers/answers.service'
-import { PrismaModule } from '@/prisma/prisma.module'
-import { PrismaService } from '@/prisma/prisma.service'
+import type { PrismaService } from '@/prisma/prisma.service'
 
 import {
-  cleanupIntegrationData,
-  createIntegrationAnswer,
-  createIntegrationQuestion,
-  createIntegrationUser,
   NON_EXISTING_UUID,
 } from './helpers/integration-data.helper'
+import type { IntegrationHelpers } from './helpers/integration-data.types'
+import { setupIntegration } from './helpers/setup-integration'
 
 describe('AnswersService (integration)', () => {
-  let testingModule: TestingModule
   let answersService: AnswersService
+  const ctx = setupIntegration({ providers: [AnswersService] })
   let prismaService: PrismaService
+  let helpers: IntegrationHelpers
 
   beforeAll(async () => {
-    testingModule = await Test.createTestingModule({
-      imports: [PrismaModule],
-      providers: [AnswersService],
-    }).compile()
-
-    answersService = testingModule.get(AnswersService)
-    prismaService = testingModule.get(PrismaService)
-
-    await prismaService.$connect()
-  })
-
-  beforeEach(async () => {
-    await cleanupIntegrationData(prismaService)
-  })
-
-  afterAll(async () => {
-    await cleanupIntegrationData(prismaService)
-    await testingModule.close()
+    answersService = ctx.testingModule.get(AnswersService)
+    prismaService = ctx.prismaService
+    helpers = ctx.helpers
   })
 
   it('markBest should mark selected answer as best', async () => {
-    const user = await createIntegrationUser(prismaService, 'user-1')
-    const question = await createIntegrationQuestion(prismaService, user.id, '1')
+    const user = await helpers.createUser('user-1')
+    const question = await helpers.createQuestion(user.id, '1')
 
-    const firstAnswer = await createIntegrationAnswer(
-      prismaService,
-      question.id,
-      user.id,
-      'First answer',
-    )
+    const firstAnswer = await helpers.createAnswer(question.id, user.id, 'First answer')
 
-    const secondAnswer = await createIntegrationAnswer(
-      prismaService,
-      question.id,
-      user.id,
-      'Second answer',
-    )
+    const secondAnswer = await helpers.createAnswer(question.id, user.id, 'Second answer')
 
     const updatedAnswer = await answersService.markBest(secondAnswer.id)
 
@@ -73,23 +46,14 @@ describe('AnswersService (integration)', () => {
   })
 
   it('markBest should unset previous best answer in the same question', async () => {
-    const user = await createIntegrationUser(prismaService, 'user-2')
-    const question = await createIntegrationQuestion(prismaService, user.id, '2')
+    const user = await helpers.createUser('user-2')
+    const question = await helpers.createQuestion(user.id, '2')
 
-    const firstAnswer = await createIntegrationAnswer(
-      prismaService,
-      question.id,
-      user.id,
-      'First answer',
-      { isBest: true },
-    )
+    const firstAnswer = await helpers.createAnswer(question.id, user.id, 'First answer', {
+      isBest: true,
+    })
 
-    const secondAnswer = await createIntegrationAnswer(
-      prismaService,
-      question.id,
-      user.id,
-      'Second answer',
-    )
+    const secondAnswer = await helpers.createAnswer(question.id, user.id, 'Second answer')
 
     await answersService.markBest(secondAnswer.id)
 
@@ -106,29 +70,26 @@ describe('AnswersService (integration)', () => {
   })
 
   it('markBest should affect only answers of the same question', async () => {
-    const user = await createIntegrationUser(prismaService, 'user-3')
+    const user = await helpers.createUser('user-3')
 
-    const firstQuestion = await createIntegrationQuestion(prismaService, user.id, '3')
-    const secondQuestion = await createIntegrationQuestion(prismaService, user.id, '4')
+    const firstQuestion = await helpers.createQuestion(user.id, '3')
+    const secondQuestion = await helpers.createQuestion(user.id, '4')
 
-    const firstQuestionAnswer = await createIntegrationAnswer(
-      prismaService,
+    const firstQuestionAnswer = await helpers.createAnswer(
       firstQuestion.id,
       user.id,
       'First question answer',
       { isBest: true },
     )
 
-    const secondQuestionAnswer = await createIntegrationAnswer(
-      prismaService,
+    const secondQuestionAnswer = await helpers.createAnswer(
       secondQuestion.id,
       user.id,
       'Second question answer',
       { isBest: true },
     )
 
-    const secondQuestionNewBest = await createIntegrationAnswer(
-      prismaService,
+    const secondQuestionNewBest = await helpers.createAnswer(
       secondQuestion.id,
       user.id,
       'Second question new best',
@@ -159,5 +120,72 @@ describe('AnswersService (integration)', () => {
 
   it('markBest should throw NotFoundException for missing answer', async () => {
     await expect(answersService.markBest(NON_EXISTING_UUID)).rejects.toThrow(NotFoundException)
+  })
+
+  it('update should update answer text for the owner', async () => {
+    const user = await helpers.createUser('answers-update')
+    const question = await helpers.createQuestion(user.id, 'answers-update')
+    const answer = await helpers.createAnswer(question.id, user.id, 'Answer before update')
+    const currentUser = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    }
+
+    const updatedAnswer = await answersService.update(
+      answer.id,
+      {
+        answerText: 'Answer after update',
+      },
+      currentUser,
+    )
+
+    expect(updatedAnswer).toEqual(
+      expect.objectContaining({
+        id: answer.id,
+        answerText: 'Answer after update',
+      }),
+    )
+  })
+
+  it('update should throw ForbiddenException for another user', async () => {
+    const owner = await helpers.createUser('answers-owner')
+    const otherUser = await helpers.createUser('answers-other')
+    const question = await helpers.createQuestion(owner.id, 'answers-forbidden')
+    const answer = await helpers.createAnswer(
+      question.id,
+      owner.id,
+      'Answer before forbidden update',
+    )
+
+    await expect(
+      answersService.update(
+        answer.id,
+        {
+          answerText: 'Forbidden answer update',
+        },
+        {
+          sub: otherUser.id,
+          email: otherUser.email,
+          role: otherUser.role,
+        },
+      ),
+    ).rejects.toThrow(ForbiddenException)
+  })
+
+  it('update should throw NotFoundException for missing answer', async () => {
+    await expect(
+      answersService.update(
+        NON_EXISTING_UUID,
+        {
+          answerText: 'Missing answer update',
+        },
+        {
+          sub: '00000000-0000-4000-8000-000000000000',
+          email: 'missing@example.com',
+          role: UserRole.USER,
+        },
+      ),
+    ).rejects.toThrow(NotFoundException)
   })
 })

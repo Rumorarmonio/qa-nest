@@ -1,31 +1,34 @@
 import { randomUUID } from 'node:crypto'
 
+import { seedUsers } from '@/shared/seed-data/users'
 import { apiRoutes } from '@test/e2e/api/api-routes'
 import { testRoute } from '@test/e2e/api/test-route'
-import { createAnswer, updateAnswer } from '@test/e2e/helpers/answers.helper'
-import { loginAsAdmin, loginAsUser } from '@test/e2e/helpers/auth.helper'
-import { createQuestion } from '@test/e2e/helpers/questions.helper'
+import { createE2eHelpers } from '@test/e2e/helpers/e2e.helpers'
 import { setupE2e } from '@test/e2e/helpers/setup-e2e'
 
 const { questions, answers } = apiRoutes
 
 describe('Answers (e2e)', () => {
   const { request } = setupE2e()
+  const helpers = createE2eHelpers(request)
 
   let userToken: string
+  let otherUserToken: string
   let adminToken: string
   let questionId: string
 
   const invalidUuid = 'not-a-uuid'
 
   beforeAll(async () => {
-    const userLoginResponse = await loginAsUser(request)
-    const adminLoginResponse = await loginAsAdmin(request)
+    const userLoginResponse = await helpers.auth.loginAsUser()
+    const otherUserLoginResponse = await helpers.auth.loginAs(seedUsers.user2)
+    const adminLoginResponse = await helpers.auth.loginAsAdmin()
 
     userToken = userLoginResponse.accessToken
+    otherUserToken = otherUserLoginResponse.accessToken
     adminToken = adminLoginResponse.accessToken
 
-    const createdQuestion = await createQuestion(request, userToken, {
+    const createdQuestion = await helpers.questions.createQuestion(userToken, {
       title: 'Question for answers e2e',
       questionText: 'Question text for answers e2e',
     })
@@ -51,7 +54,7 @@ describe('Answers (e2e)', () => {
     })
 
     testRoute(answers.getById, 'should return answer by id', async () => {
-      const createdAnswer = await createAnswer(request, userToken, questionId, {
+      const createdAnswer = await helpers.answers.createAnswer(userToken, questionId, {
         answerText: 'Answer for get by id',
       })
 
@@ -172,7 +175,7 @@ describe('Answers (e2e)', () => {
     })
 
     testRoute(answers.update, 'with invalid body should return 400', async () => {
-      const createdAnswer = await createAnswer(request, userToken, questionId, {
+      const createdAnswer = await helpers.answers.createAnswer(userToken, questionId, {
         answerText: 'Answer before invalid patch',
       })
 
@@ -186,11 +189,11 @@ describe('Answers (e2e)', () => {
     })
 
     testRoute(answers.update, 'with user token should update an answer', async () => {
-      const createdAnswer = await createAnswer(request, userToken, questionId, {
+      const createdAnswer = await helpers.answers.createAnswer(userToken, questionId, {
         answerText: 'Answer before patch',
       })
 
-      const updatedAnswer = await updateAnswer(request, userToken, createdAnswer.id, {
+      const updatedAnswer = await helpers.answers.updateAnswer(userToken, createdAnswer.id, {
         answerText: 'Answer after patch',
       })
 
@@ -200,6 +203,20 @@ describe('Answers (e2e)', () => {
           answerText: 'Answer after patch',
         }),
       )
+    })
+
+    testRoute(answers.update, 'with another user token should return 403', async () => {
+      const createdAnswer = await helpers.answers.createAnswer(userToken, questionId, {
+        answerText: 'Answer before forbidden patch',
+      })
+
+      await request()
+        .patch(answers.update.build(createdAnswer.id))
+        .set('Authorization', `Bearer ${otherUserToken}`)
+        .send({
+          answerText: 'Forbidden answer patch',
+        })
+        .expect(403)
     })
 
     testRoute(answers.remove, 'with invalid uuid should return 400', async () => {
@@ -227,7 +244,7 @@ describe('Answers (e2e)', () => {
     )
 
     testRoute(answers.remove, 'with admin token should delete an answer', async () => {
-      const createdAnswer = await createAnswer(request, userToken, questionId, {
+      const createdAnswer = await helpers.answers.createAnswer(userToken, questionId, {
         answerText: 'Answer before delete',
       })
 
@@ -260,7 +277,7 @@ describe('Answers (e2e)', () => {
     })
 
     testRoute(answers.markBest, 'with user token should return 403', async () => {
-      const createdAnswer = await createAnswer(request, userToken, questionId, {
+      const createdAnswer = await helpers.answers.createAnswer(userToken, questionId, {
         answerText: 'Answer for forbidden mark-best',
       })
 
@@ -274,11 +291,11 @@ describe('Answers (e2e)', () => {
       answers.markBest,
       'with admin token should keep exactly one best answer',
       async () => {
-        const firstAnswer = await createAnswer(request, userToken, questionId, {
+        const firstAnswer = await helpers.answers.createAnswer(userToken, questionId, {
           answerText: 'First answer for mark-best',
         })
 
-        const secondAnswer = await createAnswer(request, userToken, questionId, {
+        const secondAnswer = await helpers.answers.createAnswer(userToken, questionId, {
           answerText: 'Second answer for mark-best',
         })
 

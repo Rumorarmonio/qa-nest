@@ -1,51 +1,34 @@
-import { NotFoundException } from '@nestjs/common'
-import { Test, TestingModule } from '@nestjs/testing'
+import { ForbiddenException, NotFoundException } from '@nestjs/common'
+import { UserRole } from '@prisma/client'
 
-import { PrismaModule } from '@/prisma/prisma.module'
-import { PrismaService } from '@/prisma/prisma.service'
 import { QuestionsService } from '@/questions/questions.service'
+import type { PrismaService } from '@/prisma/prisma.service'
 
 import {
-  cleanupIntegrationData,
-  createIntegrationAnswer,
-  createIntegrationQuestion,
-  createIntegrationUser,
   INTEGRATION_TITLE_PREFIX,
   NON_EXISTING_UUID,
 } from './helpers/integration-data.helper'
+import type { IntegrationHelpers } from './helpers/integration-data.types'
+import { setupIntegration } from './helpers/setup-integration'
 
 describe('QuestionsService (integration)', () => {
-  let testingModule: TestingModule
   let questionsService: QuestionsService
+  const ctx = setupIntegration({ providers: [QuestionsService] })
   let prismaService: PrismaService
+  let helpers: IntegrationHelpers
 
   beforeAll(async () => {
-    testingModule = await Test.createTestingModule({
-      imports: [PrismaModule],
-      providers: [QuestionsService],
-    }).compile()
-
-    questionsService = testingModule.get(QuestionsService)
-    prismaService = testingModule.get(PrismaService)
-
-    await prismaService.$connect()
-  })
-
-  beforeEach(async () => {
-    await cleanupIntegrationData(prismaService)
-  })
-
-  afterAll(async () => {
-    await cleanupIntegrationData(prismaService)
-    await testingModule.close()
+    questionsService = ctx.testingModule.get(QuestionsService)
+    prismaService = ctx.prismaService
+    helpers = ctx.helpers
   })
 
   it('findAll should return paginated questions list without answers by default', async () => {
-    const user = await createIntegrationUser(prismaService, 'questions-find-all-1')
+    const user = await helpers.createUser('questions-find-all-1')
 
-    const firstQuestion = await createIntegrationQuestion(prismaService, user.id, '1')
-    const secondQuestion = await createIntegrationQuestion(prismaService, user.id, '2')
-    const thirdQuestion = await createIntegrationQuestion(prismaService, user.id, '3')
+    const firstQuestion = await helpers.createQuestion(user.id, '1')
+    const secondQuestion = await helpers.createQuestion(user.id, '2')
+    const thirdQuestion = await helpers.createQuestion(user.id, '3')
 
     const result = await questionsService.findAll({
       page: 1,
@@ -84,12 +67,12 @@ describe('QuestionsService (integration)', () => {
   })
 
   it('findAll should include answers and respect answersLimit', async () => {
-    const user = await createIntegrationUser(prismaService, 'questions-find-all-2')
-    const question = await createIntegrationQuestion(prismaService, user.id, 'with-answers')
+    const user = await helpers.createUser('questions-find-all-2')
+    const question = await helpers.createQuestion(user.id, 'with-answers')
 
-    await createIntegrationAnswer(prismaService, question.id, user.id, 'Answer 1')
-    await createIntegrationAnswer(prismaService, question.id, user.id, 'Answer 2')
-    await createIntegrationAnswer(prismaService, question.id, user.id, 'Answer 3')
+    await helpers.createAnswer(question.id, user.id, 'Answer 1')
+    await helpers.createAnswer(question.id, user.id, 'Answer 2')
+    await helpers.createAnswer(question.id, user.id, 'Answer 3')
 
     const result = await questionsService.findAll({
       page: 1,
@@ -107,31 +90,28 @@ describe('QuestionsService (integration)', () => {
   })
 
   it('findAll should order included answers with best answer first, then by createdAt asc', async () => {
-    const user = await createIntegrationUser(prismaService, 'questions-find-all-3')
-    const question = await createIntegrationQuestion(prismaService, user.id, 'answers-order')
+    const user = await helpers.createUser('questions-find-all-3')
+    const question = await helpers.createQuestion(user.id, 'answers-order')
 
     const earlierDate = new Date('2026-01-01T10:00:00.000Z')
     const laterDate = new Date('2026-01-01T11:00:00.000Z')
     const bestDate = new Date('2026-01-01T12:00:00.000Z')
 
-    const regularEarlier = await createIntegrationAnswer(
-      prismaService,
+    const regularEarlier = await helpers.createAnswer(
       question.id,
       user.id,
       'Regular earlier',
       { createdAt: earlierDate },
     )
 
-    const regularLater = await createIntegrationAnswer(
-      prismaService,
+    const regularLater = await helpers.createAnswer(
       question.id,
       user.id,
       'Regular later',
       { createdAt: laterDate },
     )
 
-    const bestAnswer = await createIntegrationAnswer(
-      prismaService,
+    const bestAnswer = await helpers.createAnswer(
       question.id,
       user.id,
       'Best answer',
@@ -155,8 +135,8 @@ describe('QuestionsService (integration)', () => {
   })
 
   it('findOneOrThrow should return question with author', async () => {
-    const user = await createIntegrationUser(prismaService, 'questions-find-one')
-    const question = await createIntegrationQuestion(prismaService, user.id, 'find-one')
+    const user = await helpers.createUser('questions-find-one')
+    const question = await helpers.createQuestion(user.id, 'find-one')
 
     const result = await questionsService.findOneOrThrow(question.id)
 
@@ -180,13 +160,22 @@ describe('QuestionsService (integration)', () => {
   })
 
   it('update should update question fields', async () => {
-    const user = await createIntegrationUser(prismaService, 'questions-update')
-    const question = await createIntegrationQuestion(prismaService, user.id, 'before-update')
+    const user = await helpers.createUser('questions-update')
+    const question = await helpers.createQuestion(user.id, 'before-update')
+    const currentUser = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    }
 
-    const updatedQuestion = await questionsService.update(question.id, {
-      title: `${INTEGRATION_TITLE_PREFIX} updated title`,
-      questionText: `${INTEGRATION_TITLE_PREFIX} updated text`,
-    })
+    const updatedQuestion = await questionsService.update(
+      question.id,
+      {
+        title: `${INTEGRATION_TITLE_PREFIX} updated title`,
+        questionText: `${INTEGRATION_TITLE_PREFIX} updated text`,
+      },
+      currentUser,
+    )
 
     expect(updatedQuestion).toEqual(
       expect.objectContaining({
@@ -197,17 +186,45 @@ describe('QuestionsService (integration)', () => {
     )
   })
 
+  it('update should throw ForbiddenException for another user', async () => {
+    const owner = await helpers.createUser('questions-owner')
+    const otherUser = await helpers.createUser('questions-other')
+    const question = await helpers.createQuestion(owner.id, 'forbidden-update')
+
+    await expect(
+      questionsService.update(
+        question.id,
+        {
+          title: `${INTEGRATION_TITLE_PREFIX} forbidden title`,
+        },
+        {
+          sub: otherUser.id,
+          email: otherUser.email,
+          role: otherUser.role,
+        },
+      ),
+    ).rejects.toThrow(ForbiddenException)
+  })
+
   it('update should throw NotFoundException for missing question', async () => {
     await expect(
-      questionsService.update(NON_EXISTING_UUID, {
-        title: `${INTEGRATION_TITLE_PREFIX} updated title`,
-      }),
+      questionsService.update(
+        NON_EXISTING_UUID,
+        {
+          title: `${INTEGRATION_TITLE_PREFIX} updated title`,
+        },
+        {
+          sub: '00000000-0000-4000-8000-000000000000',
+          email: 'missing@example.com',
+          role: UserRole.USER,
+        },
+      ),
     ).rejects.toThrow(NotFoundException)
   })
 
   it('remove should return deleted: true for existing question', async () => {
-    const user = await createIntegrationUser(prismaService, 'questions-remove-existing')
-    const question = await createIntegrationQuestion(prismaService, user.id, 'remove-existing')
+    const user = await helpers.createUser('questions-remove-existing')
+    const question = await helpers.createQuestion(user.id, 'remove-existing')
 
     const result = await questionsService.remove(question.id)
 
