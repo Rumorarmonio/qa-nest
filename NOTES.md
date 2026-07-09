@@ -33,6 +33,7 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 - Для `update` у questions и answers уже зафиксированы ownership rules: редактировать может автор или ADMIN.
 - Тестовые helpers для integration и e2e сведены в фабрики с привязанными `prismaService`/`request`.
 - Для e2e есть единый `createE2eHelpers(request)`-слой с namespace-доступом `helpers.auth/questions/answers`.
+- E2e-тесты сейчас запускаются последовательно (`--runInBand`), чтобы не было гонок с общим cleanup; отдельная тестовая БД остаётся следующим шагом.
 - Для integration есть `setupIntegration(...)`, который берёт на себя lifecycle module/prisma/cleanup и отдаёт `ctx` через getters.
 - Есть сидеры users, questions и answers.
 - Есть Swagger/OpenAPI.
@@ -48,4 +49,4 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 
 ## Следующий шаг
 
-Продолжить этап стабилизации API: добрать remaining coverage вокруг best answer/edge cases и затем переходить к минимальному scope админки.
+Продолжить этап стабилизации API: добрать remaining coverage вокруг best answer/edge cases, затем настроить отдельную тестовую БД для e2e и после этого переходить к минимальному scope админки.

@@ -4,6 +4,7 @@ import { seedUsers } from '@/shared/seed-data/users'
 import { apiRoutes } from '@test/e2e/api/api-routes'
 import { testRoute } from '@test/e2e/api/test-route'
 import { createE2eHelpers } from '@test/e2e/helpers/e2e.helpers'
+import { createE2eLabel } from '@test/e2e/helpers/e2e-data.helper'
 import { setupE2e } from '@test/e2e/helpers/setup-e2e'
 
 const { questions } = apiRoutes
@@ -122,7 +123,7 @@ describe('Questions (e2e)', () => {
 
     testRoute(questions.getById, 'should return question by id', async () => {
       const createdQuestion = await helpers.questions.createQuestion(userToken, {
-        title: 'Question for get by id',
+        title: createE2eLabel('Question for get by id'),
         questionText: 'Question text for get by id',
       })
 
@@ -131,7 +132,7 @@ describe('Questions (e2e)', () => {
       expect(response.body).toEqual(
         expect.objectContaining({
           id: createdQuestion.id,
-          title: 'Question for get by id',
+          title: createE2eLabel('Question for get by id'),
           questionText: 'Question text for get by id',
         }),
       )
@@ -223,7 +224,7 @@ describe('Questions (e2e)', () => {
         .post(questions.create.path)
         .set('Authorization', `Bearer ${userToken}`)
         .send({
-          title: 'Created from e2e',
+          title: createE2eLabel('Created from e2e'),
           questionText: 'Question created in questions.e2e-spec.ts',
         })
         .expect(201)
@@ -236,7 +237,7 @@ describe('Questions (e2e)', () => {
             id: expect.any(String),
             name: expect.any(String),
           }),
-          title: 'Created from e2e',
+          title: createE2eLabel('Created from e2e'),
           questionText: 'Question created in questions.e2e-spec.ts',
           createdAt: expect.any(String),
           updatedAt: expect.any(String),
@@ -246,7 +247,7 @@ describe('Questions (e2e)', () => {
 
     testRoute(questions.update, 'without token should return 401', async () => {
       const createdQuestion = await helpers.questions.createQuestion(userToken, {
-        title: 'Question for unauthorized patch',
+        title: createE2eLabel('Question for unauthorized patch'),
         questionText: 'Before unauthorized patch',
       })
 
@@ -282,7 +283,7 @@ describe('Questions (e2e)', () => {
 
     testRoute(questions.update, 'with invalid body should return 400', async () => {
       const createdQuestion = await helpers.questions.createQuestion(userToken, {
-        title: 'Question before invalid patch',
+        title: createE2eLabel('Question before invalid patch'),
         questionText: 'Question text before invalid patch',
       })
 
@@ -298,19 +299,23 @@ describe('Questions (e2e)', () => {
 
     testRoute(questions.update, 'with user token should update a question', async () => {
       const createdQuestion = await helpers.questions.createQuestion(userToken, {
-        title: 'Question before patch',
+        title: createE2eLabel('Question before patch'),
         questionText: 'Question text before patch',
       })
 
-      const updatedQuestion = await helpers.questions.updateQuestion(userToken, createdQuestion.id, {
-        title: 'Question after patch',
-        questionText: 'Question text after patch',
-      })
+      const updatedQuestion = await helpers.questions.updateQuestion(
+        userToken,
+        createdQuestion.id,
+        {
+          title: createE2eLabel('Question after patch'),
+          questionText: 'Question text after patch',
+        },
+      )
 
       expect(updatedQuestion).toEqual(
         expect.objectContaining({
           id: createdQuestion.id,
-          title: 'Question after patch',
+          title: createE2eLabel('Question after patch'),
           questionText: 'Question text after patch',
         }),
       )
@@ -318,7 +323,7 @@ describe('Questions (e2e)', () => {
 
     testRoute(questions.update, 'with another user token should return 403', async () => {
       const createdQuestion = await helpers.questions.createQuestion(userToken, {
-        title: 'Question before forbidden patch',
+        title: createE2eLabel('Question before forbidden patch'),
         questionText: 'Question text before forbidden patch',
       })
 
@@ -333,7 +338,7 @@ describe('Questions (e2e)', () => {
 
     testRoute(questions.remove, 'without token should return 401', async () => {
       const createdQuestion = await helpers.questions.createQuestion(userToken, {
-        title: 'Question for unauthorized delete',
+        title: createE2eLabel('Question for unauthorized delete'),
         questionText: 'Before unauthorized delete',
       })
 
@@ -366,7 +371,7 @@ describe('Questions (e2e)', () => {
 
     testRoute(questions.remove, 'with admin token should delete a question', async () => {
       const createdQuestion = await helpers.questions.createQuestion(userToken, {
-        title: 'Question before delete',
+        title: createE2eLabel('Question before delete'),
         questionText: 'Question text before delete',
       })
 

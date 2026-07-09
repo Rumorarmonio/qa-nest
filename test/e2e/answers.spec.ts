@@ -4,6 +4,7 @@ import { seedUsers } from '@/shared/seed-data/users'
 import { apiRoutes } from '@test/e2e/api/api-routes'
 import { testRoute } from '@test/e2e/api/test-route'
 import { createE2eHelpers } from '@test/e2e/helpers/e2e.helpers'
+import { createE2eLabel } from '@test/e2e/helpers/e2e-data.helper'
 import { setupE2e } from '@test/e2e/helpers/setup-e2e'
 
 const { questions, answers } = apiRoutes
@@ -29,7 +30,7 @@ describe('Answers (e2e)', () => {
     adminToken = adminLoginResponse.accessToken
 
     const createdQuestion = await helpers.questions.createQuestion(userToken, {
-      title: 'Question for answers e2e',
+      title: createE2eLabel('Question for answers e2e'),
       questionText: 'Question text for answers e2e',
     })
 

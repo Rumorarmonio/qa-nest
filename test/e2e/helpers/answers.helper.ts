@@ -1,6 +1,8 @@
 import { apiRoutes } from '@test/e2e/api/api-routes'
 import type { RequestFactory } from '@test/e2e/helpers/auth.helper'
 
+import { createE2eLabel } from './e2e-data.helper'
+
 export type CreateAnswerPayload = {
   answerText: string
 }
@@ -47,7 +49,7 @@ async function createAnswer(
   overrides: Partial<CreateAnswerPayload> = {},
 ): Promise<CreateAnswerResponseBody> {
   const payload: CreateAnswerPayload = {
-    answerText: 'E2E answer text',
+    answerText: createE2eLabel('E2E answer text'),
     ...overrides,
   }
 

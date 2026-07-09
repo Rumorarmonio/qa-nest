@@ -2,6 +2,7 @@ import { seedUsers } from '@/shared/seed-data/users'
 import { apiRoutes } from '@test/e2e/api/api-routes'
 import { testRoute } from '@test/e2e/api/test-route'
 import { createE2eHelpers } from '@test/e2e/helpers/e2e.helpers'
+import { createE2eEmail, createE2eLabel } from '@test/e2e/helpers/e2e-data.helper'
 import { setupE2e } from '@test/e2e/helpers/setup-e2e'
 
 const { auth } = apiRoutes
@@ -108,8 +109,8 @@ describe('Auth (e2e)', () => {
     const uniqueSuffix = Date.now()
 
     const registerPayload = {
-      name: `E2E User ${uniqueSuffix}`,
-      email: `e2e-user-${uniqueSuffix}@example.com`,
+      name: createE2eLabel(`User ${uniqueSuffix}`),
+      email: createE2eEmail(`user-${uniqueSuffix}`),
       password: 'Password123!',
     }
 

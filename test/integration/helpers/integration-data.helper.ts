@@ -1,5 +1,6 @@
 import { PrismaService } from '@/prisma/prisma.service'
 import { UserRole } from '@prisma/client'
+import { cleanupTestData } from '@test/helpers/test-data.helper'
 
 import {
   type CreateIntegrationAnswerOptions,
@@ -14,30 +15,9 @@ export const INTEGRATION_PASSWORD_HASH = 'integration-test-password-hash'
 export const NON_EXISTING_UUID = '00000000-0000-4000-8000-000000000000'
 
 async function cleanupIntegrationData(prismaService: PrismaService): Promise<void> {
-  await prismaService.answer.deleteMany({
-    where: {
-      question: {
-        title: {
-          startsWith: INTEGRATION_TITLE_PREFIX,
-        },
-      },
-    },
-  })
-
-  await prismaService.question.deleteMany({
-    where: {
-      title: {
-        startsWith: INTEGRATION_TITLE_PREFIX,
-      },
-    },
-  })
-
-  await prismaService.user.deleteMany({
-    where: {
-      email: {
-        startsWith: INTEGRATION_EMAIL_PREFIX,
-      },
-    },
+  await cleanupTestData(prismaService, {
+    titlePrefix: INTEGRATION_TITLE_PREFIX,
+    emailPrefix: INTEGRATION_EMAIL_PREFIX,
   })
 }
 
