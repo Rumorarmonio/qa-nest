@@ -2,14 +2,17 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { UserRole } from '@prisma/client'
 
 import type { JwtPayload } from '@/auth/jwt-payload.type'
+import { hasPrismaErrorCode } from '@/common/prisma-error'
+import type { DeleteResult } from '@/common/schemas/common.schema'
+import type { Answer } from '@/common/schemas/answer.schema'
+import type { CreateAnswerInput, UpdateAnswerInput } from '@/answers/answers.dto'
 import { PrismaService } from '@/prisma/prisma.service'
-import { CreateAnswerDto, UpdateAnswerDto } from '@/answers/answers.dto'
 
 @Injectable()
 export class AnswersService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async findAllByQuestion(questionId: string) {
+  async findAllByQuestion(questionId: string): Promise<Answer[]> {
     const questionExists = await this.prismaService.question.findUnique({
       where: { id: questionId },
       select: { id: true },
@@ -26,7 +29,7 @@ export class AnswersService {
     })
   }
 
-  async findOneOrThrow(id: string) {
+  async findOneOrThrow(id: string): Promise<Answer> {
     const answer = await this.prismaService.answer.findUnique({
       where: { id },
       include: { author: { select: { id: true, name: true } } },
@@ -39,7 +42,7 @@ export class AnswersService {
     return answer
   }
 
-  async create(questionId: string, dto: CreateAnswerDto, authorId: string) {
+  async create(questionId: string, dto: CreateAnswerInput, authorId: string): Promise<Answer> {
     const questionExists = await this.prismaService.question.findUnique({
       where: { id: questionId },
       select: { id: true },
@@ -73,7 +76,7 @@ export class AnswersService {
     return created
   }
 
-  async update(id: string, dto: UpdateAnswerDto, currentUser: JwtPayload) {
+  async update(id: string, dto: UpdateAnswerInput, currentUser: JwtPayload): Promise<Answer> {
     const answer = await this.prismaService.answer.findUnique({
       where: { id },
       select: { id: true, authorId: true },
@@ -96,12 +99,7 @@ export class AnswersService {
         include: { author: { select: { id: true, name: true } } },
       })
     } catch (error: unknown) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        (error as any).code === 'P2025'
-      ) {
+      if (hasPrismaErrorCode(error, 'P2025')) {
         throw new NotFoundException(`Answer ${id} not found`)
       }
 
@@ -109,7 +107,7 @@ export class AnswersService {
     }
   }
 
-  async markBest(id: string) {
+  async markBest(id: string): Promise<Answer> {
     const answer = await this.prismaService.answer.findUnique({
       where: { id },
       select: { id: true, questionId: true },
@@ -135,17 +133,12 @@ export class AnswersService {
     return updated
   }
 
-  async remove(id: string): Promise<{ deleted: boolean }> {
+  async remove(id: string): Promise<DeleteResult> {
     try {
       await this.prismaService.answer.delete({ where: { id } })
       return { deleted: true }
     } catch (error: unknown) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        (error as any).code === 'P2025'
-      ) {
+      if (hasPrismaErrorCode(error, 'P2025')) {
         return { deleted: false }
       }
 

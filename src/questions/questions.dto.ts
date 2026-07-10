@@ -1,31 +1,15 @@
 import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
 
-import { deleteResultSchema } from '@/common/schemas/common.schema'
+import { answerSchema } from '@/common/schemas/answer.schema'
 import { dateAsIsoString } from '@/common/schemas/date.schema'
-import {
-  answerTextFieldSchema,
-  questionTextFieldSchema,
-  titleFieldSchema,
-} from '@/common/schemas/fields.schema'
-import { createUuidParamSchema } from '@/common/schemas/param.schema'
+import { questionTextFieldSchema, titleFieldSchema } from '@/common/schemas/fields.schema'
 import {
   basePaginationQuerySchema,
   booleanQuerySchema,
   paginationMetaSchema,
 } from '@/common/schemas/query.schema'
 import { userPreviewSchema } from '@/common/schemas/user.schema'
-
-export const answerPreviewSchema = z.object({
-  id: z.uuid(),
-  questionId: z.uuid(),
-  authorId: z.uuid(),
-  author: userPreviewSchema,
-  answerText: answerTextFieldSchema,
-  isBest: z.boolean(),
-  createdAt: dateAsIsoString,
-  updatedAt: dateAsIsoString,
-})
 
 export const questionSchema = z.object({
   id: z.uuid(),
@@ -37,6 +21,8 @@ export const questionSchema = z.object({
   updatedAt: dateAsIsoString,
 })
 
+export type Question = z.output<typeof questionSchema>
+
 export class QuestionDto extends createZodDto(questionSchema, { codec: true }) {}
 
 export const createQuestionSchema = z
@@ -46,17 +32,15 @@ export const createQuestionSchema = z
   })
   .strict()
 
+export type CreateQuestionInput = z.output<typeof createQuestionSchema>
+
 export class CreateQuestionDto extends createZodDto(createQuestionSchema) {}
 
 export const updateQuestionSchema = createQuestionSchema.partial().strict()
 
+export type UpdateQuestionInput = z.output<typeof updateQuestionSchema>
+
 export class UpdateQuestionDto extends createZodDto(updateQuestionSchema) {}
-
-export const questionIdParamSchema = createUuidParamSchema('id')
-export class QuestionIdParamDto extends createZodDto(questionIdParamSchema) {}
-
-export const deleteQuestionResultSchema = deleteResultSchema
-export class DeleteQuestionResultDto extends createZodDto(deleteQuestionResultSchema) {}
 
 export const listQuestionsQuerySchema = basePaginationQuerySchema
   .extend({
@@ -74,17 +58,23 @@ export const listQuestionsQuerySchema = basePaginationQuerySchema
   })
   .strict()
 
+export type ListQuestionsQuery = z.output<typeof listQuestionsQuerySchema>
+
 export class ListQuestionsQueryDto extends createZodDto(listQuestionsQuerySchema) {}
 
 export const questionListItemSchema = questionSchema.extend({
   answersCount: z.number().int().min(0),
-  answers: z.array(answerPreviewSchema).optional(),
+  answers: z.array(answerSchema).optional(),
 })
+
+export type QuestionListItem = z.output<typeof questionListItemSchema>
 
 export const questionsListResponseSchema = z.object({
   items: z.array(questionListItemSchema),
   pagination: paginationMetaSchema,
 })
+
+export type QuestionsListResponse = z.output<typeof questionsListResponseSchema>
 
 export class QuestionsListResponseDto extends createZodDto(questionsListResponseSchema, {
   codec: true,

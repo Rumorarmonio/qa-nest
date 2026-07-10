@@ -9,13 +9,13 @@ import { Roles } from '@/auth/roles.decorator'
 import { RolesGuard } from '@/auth/roles.guard'
 import {
   AnswerDto,
-  AnswerIdParamDto,
   CreateAnswerDto,
-  DeleteAnswerResultDto,
   QuestionIdParamDto,
   UpdateAnswerDto,
 } from '@/answers/answers.dto'
+import { IdParamDto } from '@/common/schemas/param.schema'
 import { AnswersService } from '@/answers/answers.service'
+import { DeleteResultDto } from '@/common/schemas/common.schema'
 import { UserRole } from '@prisma/client'
 
 @ApiTags('answers')
@@ -31,7 +31,7 @@ export class AnswersController {
 
   @Get('answers/:id')
   @ZodResponse({ type: AnswerDto })
-  findOne(@Param() params: AnswerIdParamDto) {
+  findOne(@Param() params: IdParamDto) {
     return this.answersService.findOneOrThrow(params.id)
   }
 
@@ -54,7 +54,7 @@ export class AnswersController {
   @ApiBearerAuth()
   @ZodResponse({ type: AnswerDto })
   update(
-    @Param() params: AnswerIdParamDto,
+    @Param() params: IdParamDto,
     @Body() dto: UpdateAnswerDto,
     @CurrentUser() currentUser: JwtPayload,
   ) {
@@ -66,7 +66,7 @@ export class AnswersController {
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
   @ZodResponse({ type: AnswerDto })
-  markBest(@Param() params: AnswerIdParamDto) {
+  markBest(@Param() params: IdParamDto) {
     return this.answersService.markBest(params.id)
   }
 
@@ -74,8 +74,8 @@ export class AnswersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @ZodResponse({ type: DeleteAnswerResultDto })
-  remove(@Param() params: AnswerIdParamDto) {
+  @ZodResponse({ type: DeleteResultDto })
+  remove(@Param() params: IdParamDto) {
     return this.answersService.remove(params.id)
   }
 }

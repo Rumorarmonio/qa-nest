@@ -1,23 +1,30 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
 import * as bcrypt from 'bcrypt'
-
-import { PrismaService } from '@/prisma/prisma.service'
 import { UserRole } from '@prisma/client'
 
-type CreateUserInput = {
-  name: string
-  email: string
-  password: string
-  role?: UserRole
-}
+import { hasPrismaErrorCode } from '@/common/prisma-error'
+import { PrismaService } from '@/prisma/prisma.service'
+import type { CreateUserInput, User } from '@/users/users.dto'
+
+type UserRow = User & { passwordHash: string }
+
+const publicUserSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  createdAt: true,
+  updatedAt: true,
+} as const
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async findByIdOrThrow(id: string) {
+  async findByIdOrThrow(id: string): Promise<User> {
     const user = await this.prismaService.user.findUnique({
       where: { id },
+      select: publicUserSelect,
     })
 
     if (!user) {
@@ -27,33 +34,30 @@ export class UsersService {
     return user
   }
 
-  async findByEmail(email: string) {
+  async findByEmail(email: string): Promise<User | null> {
     return this.prismaService.user.findUnique({
       where: { email: email.toLowerCase().trim() },
+      select: publicUserSelect,
     })
   }
 
-  async createUser(input: CreateUserInput) {
+  async createUser(input: CreateUserInput): Promise<User> {
     const normalizedEmail = input.email.toLowerCase().trim()
-    const passwordHash = await bcrypt.hash(input.password, 10)
+    const hashedPassword = await bcrypt.hash(input.password, 10)
 
     try {
       return await this.prismaService.user.create({
         data: {
           name: input.name.trim(),
           email: normalizedEmail,
-          passwordHash,
+          passwordHash: hashedPassword,
           role: input.role ?? UserRole.USER,
         },
+        select: publicUserSelect,
       })
     } catch (error: unknown) {
       // Prisma unique violation
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        (error as any).code === 'P2002'
-      ) {
+      if (hasPrismaErrorCode(error, 'P2002')) {
         throw new ConflictException('Email is already registered')
       }
 
@@ -61,21 +65,12 @@ export class UsersService {
     }
   }
 
-  async validateCredentials(email: string, password: string) {
+  async validateCredentials(email: string, password: string): Promise<User> {
     const normalizedEmail = email.toLowerCase().trim()
 
-    const user = await this.prismaService.user.findUnique({
+    const user = (await this.prismaService.user.findUnique({
       where: { email: normalizedEmail },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-        passwordHash: true,
-      },
-    })
+    })) as UserRow | null
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials')
@@ -87,8 +82,6 @@ export class UsersService {
       throw new UnauthorizedException('Invalid credentials')
     }
 
-    const { passwordHash, ...publicUser } = user
-
-    return publicUser
+    return user
   }
 }

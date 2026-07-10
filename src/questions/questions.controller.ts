@@ -9,14 +9,14 @@ import { Roles } from '@/auth/roles.decorator'
 import { RolesGuard } from '@/auth/roles.guard'
 import {
   CreateQuestionDto,
-  DeleteQuestionResultDto,
   ListQuestionsQueryDto,
   QuestionDto,
-  QuestionIdParamDto,
   QuestionsListResponseDto,
   UpdateQuestionDto,
 } from '@/questions/questions.dto'
+import { IdParamDto } from '@/common/schemas/param.schema'
 import { QuestionsService } from '@/questions/questions.service'
+import { DeleteResultDto } from '@/common/schemas/common.schema'
 import { UserRole } from '@prisma/client'
 
 @ApiTags('questions')
@@ -32,7 +32,7 @@ export class QuestionsController {
 
   @Get(':id')
   @ZodResponse({ type: QuestionDto })
-  findOne(@Param() params: QuestionIdParamDto) {
+  findOne(@Param() params: IdParamDto) {
     return this.questionsService.findOneOrThrow(params.id)
   }
 
@@ -51,7 +51,7 @@ export class QuestionsController {
   @ApiBearerAuth()
   @ZodResponse({ type: QuestionDto })
   update(
-    @Param() params: QuestionIdParamDto,
+    @Param() params: IdParamDto,
     @Body() dto: UpdateQuestionDto,
     @CurrentUser() currentUser: JwtPayload,
   ) {
@@ -62,8 +62,8 @@ export class QuestionsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @ZodResponse({ type: DeleteQuestionResultDto })
-  remove(@Param() params: QuestionIdParamDto) {
+  @ZodResponse({ type: DeleteResultDto })
+  remove(@Param() params: IdParamDto) {
     return this.questionsService.remove(params.id)
   }
 }

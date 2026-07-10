@@ -31,6 +31,8 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 - Есть регистрация, логин и `me` по JWT.
 - Есть CRUD для вопросов и ответов, включая пагинацию, nested answers и mark-best.
 - Для `update` у questions и answers уже зафиксированы ownership rules: редактировать может автор или ADMIN.
+- В `UsersService` публичные методы уже читают только публичные поля через `select`, а `validateCredentials` оставляет `passwordHash` только для проверки пароля.
+- `registerSchema` в `auth.dto.ts` теперь переиспользует `createUserSchema.omit({ role: true })`, чтобы не дублировать поля name/email/password.
 - Тестовые helpers для integration и e2e сведены в фабрики с привязанными `prismaService`/`request`.
 - Для e2e есть единый `createE2eHelpers(request)`-слой с namespace-доступом `helpers.auth/questions/answers`.
 - E2e-тесты сейчас запускаются последовательно (`--runInBand`), чтобы не было гонок с общим cleanup; отдельная тестовая БД остаётся следующим шагом.
