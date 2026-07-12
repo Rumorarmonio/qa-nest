@@ -35,7 +35,8 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 - `registerSchema` в `auth.dto.ts` теперь переиспользует `createUserSchema.omit({ role: true })`, чтобы не дублировать поля name/email/password.
 - Тестовые helpers для integration и e2e сведены в фабрики с привязанными `prismaService`/`request`.
 - Для e2e есть единый `createE2eHelpers(request)`-слой с namespace-доступом `helpers.auth/questions/answers`.
-- E2e-тесты сейчас запускаются последовательно (`--runInBand`), чтобы не было гонок с общим cleanup; отдельная тестовая БД остаётся следующим шагом.
+- Для integration и e2e тестов используется отдельная test DB через `.env.test` и отдельный `postgres-test` сервис в `docker-compose.yml`; тесты запускаются последовательно через `--runInBand`.
+- `db:test:reset` теперь сбрасывает test DB, накатывает миграции и сразу сидит базовых пользователей, чтобы e2e helper-ы могли логиниться без ручного шага.
 - Для integration есть `setupIntegration(...)`, который берёт на себя lifecycle module/prisma/cleanup и отдаёт `ctx` через getters.
 - Есть сидеры users, questions и answers.
 - Есть Swagger/OpenAPI.
@@ -51,4 +52,4 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 
 ## Следующий шаг
 
-Продолжить этап стабилизации API: добрать remaining coverage вокруг best answer/edge cases, затем настроить отдельную тестовую БД для e2e и после этого переходить к минимальному scope админки.
+Продолжить этап стабилизации API: добрать remaining coverage вокруг best answer/edge cases, затем проверить последовательный запуск integration/e2e на новой test DB и после этого переходить к минимальному scope админки.

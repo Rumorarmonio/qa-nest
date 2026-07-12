@@ -16,10 +16,10 @@ QA Backend - учебный backend на NestJS + Prisma + PostgreSQL для с�
 
 ## Статус этапов
 
-- Этап 1 — в процессе: ownership rules для update questions/answers зафиксированы в сервисах и покрыты тестами; тестовые helpers переведены на фабрики; e2e helper-слой собран в единый `createE2eHelpers`; integration-тесты получили `setupIntegration`; e2e сейчас запускаются последовательно (`--runInBand`), чтобы исключить гонки на cleanup; осталось добрать remaining edge cases вокруг best answer, затем настроить отдельную тестовую БД для e2e и после этого двигаться к админке
+- Этап 1 — в процессе: ownership rules для update questions/answers зафиксированы в сервисах и покрыты тестами; тестовые helpers переведены на фабрики; e2e helper-слой собран в единый `createE2eHelpers`; integration-тесты получили `setupIntegration`; для integration/e2e добавлена отдельная test DB через `.env.test` и `postgres-test` в docker-compose, тесты запускаются последовательно через `--runInBand`; `db:test:reset` теперь также сидит базовых пользователей для e2e; осталось добрать remaining edge cases вокруг best answer и проверить новый sequential test workflow, затем двигаться к админке
 - Этап 2 — не начат
 - Этап 3 — не начат
 
 ## Следующий этап
 
-Завершить остатки этапа 1: проверить и при необходимости добрать edge cases для best answer, затем настроить отдельную тестовую БД для e2e и после этого перейти к минимальному scope админки.
+Завершить остатки этапа 1: проверить и при необходимости добрать edge cases для best answer, затем убедиться, что sequential integration/e2e стабильно работают на новой test DB с seed users, и после этого перейти к минимальному scope админки.

@@ -17,7 +17,7 @@
 - Сидеры для заполнения БД тестовыми данными: users, questions, answers.
 - Postman-коллекция для тестирования API.
 - Выделенная тестовая инфраструктура для unit, e2e и integration тестов.
-- Отдельная тестовая база данных для integration-тестов через `.env.test`.
+- Отдельная тестовая база данных для integration/e2e-тестов через `.env.test`.
 
 ## Технологии и зачем они здесь
 
@@ -64,14 +64,15 @@ JWT_ACCESS_SECRET="change-me"
 JWT_ACCESS_EXPIRES_IN="7d"
 ```
 
-Для integration-тестов используется отдельный `.env.test`, в котором `DATABASE_URL` должен указывать на отдельную test DB, например `app_test`.
+Для integration и e2e-тестов используется отдельный `.env.test`, в котором `DATABASE_URL` должен указывать на отдельную test DB, например `app_test`.
+Тесты запускаются последовательно, поэтому отдельные schema на worker не нужны.
 
 Примечание:
 
 - Хост `postgres` удобен, если приложение запускается в окружении, где этот хост резолвится (Docker network / ваш сетап).
 - Если вы запускаете API локально и `postgres` не резолвится, используйте `localhost`.
 
-### 3) Поднять инфраструктуру (PostgreSQL + Adminer) в Docker
+### 3) Поднять инфраструктуру (PostgreSQL + test PostgreSQL + Adminer) в Docker
 
 ```bash
 docker compose up -d
@@ -186,6 +187,12 @@ docker compose up -d --force-recreate adminer
 - `npm run test:integration`
 - `npm run test:integration:verbose`
 
+Для полного сброса test DB можно использовать:
+
+- `npm run db:test:reset`
+
+Команда сбрасывает test DB, заново накатывает миграции и затем сидит базовых пользователей, которых используют e2e helper-ы для логина.
+
 Также в проекте есть unit-тесты для чистых тестовых утилит и route infrastructure. Они разложены в отдельную директорию `test/unit`.
 
 ## Тестирование
@@ -227,8 +234,9 @@ test/
   integration/
     helpers/
       integration-data.helper.ts
-    setup-env.ts
     *.spec.ts
+
+  setup-env.ts
 
   unit/
     e2e/
@@ -395,13 +403,13 @@ const { questions, answers } = apiRoutes
 
 ### Переменные окружения для integration-тестов
 
-Integration-тесты используют отдельное окружение и отдельную test DB. Для этого в корне проекта поддерживается файл `.env.test`, а Jest подгружает его через:
+Integration- и e2e-тесты используют отдельное окружение и отдельную test DB. Для этого в корне проекта поддерживается файл `.env.test`, а Jest подгружает его через:
 
 ```text
-test/integration/setup-env.ts
+test/setup-env.ts
 ```
 
-Это позволяет запускать integration-тесты изолированно от основной базы разработки.
+Это позволяет запускать тесты изолированно от основной базы разработки.
 
 Аналогично, если e2e-тестам нужен собственный bootstrap/setup, его лучше держать внутри `test/e2e`.
 
@@ -443,7 +451,7 @@ test/integration/setup-env.ts
 
 ## TODO
 
-- Автоматизировать подготовку test DB (reset / schema push / seed) одной или несколькими npm-командами.
+- При необходимости добавить поверх `db:test:reset` автоматический seed для тестовых сценариев, где нужен не пустой baseline.
 - При необходимости добавить отдельный Jest-конфиг и npm scripts для `test/unit`.
 - Держать Jest-конфигурацию синхронизированной с реальной структурой папок (`test/e2e`, `test/integration`, `test/unit`).
 - Поддерживать единый стиль объявления API-тестов через route objects и `testRoute(...)`.

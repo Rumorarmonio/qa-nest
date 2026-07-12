@@ -21,6 +21,17 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  postgres-test:
+    image: postgres:17.3-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-test:/var/lib/postgresql/data
+
   adminer:
     image: adminer:4.8.1
     ports:
@@ -32,3 +43,4 @@ services:
 
 volumes:
   pgdata:
+  pgdata-test:
