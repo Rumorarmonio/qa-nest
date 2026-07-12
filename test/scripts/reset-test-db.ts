@@ -1,11 +1,8 @@
 import { execFileSync } from 'node:child_process'
-import path from 'node:path'
 
-import * as dotenv from 'dotenv'
+import { loadTestEnv } from '@test/helpers/load-test-env'
 
-dotenv.config({
-  path: path.resolve(process.cwd(), '.env.test'),
-})
+loadTestEnv()
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set')

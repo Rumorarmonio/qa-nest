@@ -1,7 +1,3 @@
-import path from 'node:path'
+import { loadTestEnv } from '@test/helpers/load-test-env'
 
-import * as dotenv from 'dotenv'
-
-dotenv.config({
-  path: path.resolve(process.cwd(), '.env.test'),
-})
+loadTestEnv()
