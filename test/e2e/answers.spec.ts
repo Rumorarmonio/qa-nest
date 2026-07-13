@@ -348,5 +348,46 @@ describe('Answers (e2e)', () => {
         expect(bestAnswers[0].id).toBe(secondAnswer.id)
       },
     )
+
+    testRoute(
+      questions.createAnswer,
+      'with isBest=true should keep exactly one best answer',
+      async () => {
+        const firstAnswer = await helpers.answers.createAnswer(userToken, questionId, {
+          answerText: 'First answer created as best',
+          isBest: true,
+        })
+
+        const secondAnswer = await helpers.answers.createAnswer(userToken, questionId, {
+          answerText: 'Second answer created as best',
+          isBest: true,
+        })
+
+        expect(firstAnswer.isBest).toBe(true)
+        expect(secondAnswer.isBest).toBe(true)
+
+        const firstAnswerResponse = await request()
+          .get(answers.getById.build(firstAnswer.id))
+          .expect(200)
+
+        const secondAnswerResponse = await request()
+          .get(answers.getById.build(secondAnswer.id))
+          .expect(200)
+
+        expect(firstAnswerResponse.body.isBest).toBe(false)
+        expect(secondAnswerResponse.body.isBest).toBe(true)
+
+        const answersListResponse = await request()
+          .get(questions.getAnswers.build(questionId))
+          .expect(200)
+
+        const bestAnswers = answersListResponse.body.filter(
+          (answer: { isBest: boolean }) => answer.isBest,
+        )
+
+        expect(bestAnswers).toHaveLength(1)
+        expect(bestAnswers[0].id).toBe(secondAnswer.id)
+      },
+    )
   })
 })

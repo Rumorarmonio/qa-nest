@@ -38,6 +38,7 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 - Для integration и e2e тестов используется отдельная test DB через `.env.test` и отдельный `postgres-test` сервис в `docker-compose.yml`; тесты запускаются последовательно через `--runInBand`.
 - `db:test:reset` теперь сбрасывает test DB, накатывает миграции и сразу сидит базовых пользователей, чтобы e2e helper-ы могли логиниться без ручного шага.
 - Для integration есть `setupIntegration(...)`, который берёт на себя lifecycle module/prisma/cleanup и отдаёт `ctx` через getters.
+- Для `best answer` уже добавлены проверки на создание ответа с `isBest=true` и на уникальный DB-constraint через прямую Prisma-вставку; в сервисе `AnswersService` уникальная ошибка теперь переводится в `ConflictException`.
 - Есть сидеры users, questions и answers.
 - Есть Swagger/OpenAPI.
 - Есть e2e, integration и unit тестовая инфраструктура.
@@ -47,9 +48,9 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 ## Текущие проблемы / открытые вопросы
 
 - Нужно определить минимальный scope первой версии админки.
-- Нужно решить, какие из расширяющих фич первыми пойдут после стабилизации backend: поиск, фильтрация, теги, комментарии, лайки, уведомления.
+- Нужно повторно прогнать integration/e2e на поднятой Docker DB и подтвердить новый сценарий для `best answer`.
 - DB-level constraint для единственного best answer уже есть в initial migration, но при дальнейшем изменении схемы его важно не потерять.
 
 ## Следующий шаг
 
-Продолжить этап стабилизации API: добрать remaining coverage вокруг best answer/edge cases, затем проверить последовательный запуск integration/e2e на новой test DB и после этого переходить к минимальному scope админки.
+Продолжить этап стабилизации API: проверить новый `best answer`-сценарий на поднятой test DB, затем убедиться, что sequential integration/e2e стабильно работают, и после этого переходить к минимальному scope админки.

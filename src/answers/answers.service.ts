@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { UserRole } from '@prisma/client'
 
 import type { JwtPayload } from '@/auth/jwt-payload.type'
@@ -52,28 +57,36 @@ export class AnswersService {
       throw new NotFoundException(`Question ${questionId} not found`)
     }
 
-    const [created] = await this.prismaService.$transaction(async (tx) => {
-      if (dto.isBest === true) {
-        await tx.answer.updateMany({
-          where: { questionId, isBest: true },
-          data: { isBest: false },
-        })
-      }
+    try {
+      const [created] = await this.prismaService.$transaction(async (tx) => {
+        if (dto.isBest === true) {
+          await tx.answer.updateMany({
+            where: { questionId, isBest: true },
+            data: { isBest: false },
+          })
+        }
 
-      const answer = await tx.answer.create({
-        data: {
-          questionId,
-          authorId,
-          answerText: dto.answerText,
-          isBest: dto.isBest ?? false,
-        },
-        include: { author: { select: { id: true, name: true } } },
+        const answer = await tx.answer.create({
+          data: {
+            questionId,
+            authorId,
+            answerText: dto.answerText,
+            isBest: dto.isBest ?? false,
+          },
+          include: { author: { select: { id: true, name: true } } },
+        })
+
+        return [answer] as const
       })
 
-      return [answer] as const
-    })
+      return created
+    } catch (error: unknown) {
+      if (hasPrismaErrorCode(error, 'P2002')) {
+        throw new ConflictException('Question already has a best answer')
+      }
 
-    return created
+      throw error
+    }
   }
 
   async update(id: string, dto: UpdateAnswerInput, currentUser: JwtPayload): Promise<Answer> {
@@ -117,20 +130,26 @@ export class AnswersService {
       throw new NotFoundException(`Answer ${id} not found`)
     }
 
-    const updated = await this.prismaService.$transaction(async (tx) => {
-      await tx.answer.updateMany({
-        where: { questionId: answer.questionId, isBest: true },
-        data: { isBest: false },
-      })
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        await tx.answer.updateMany({
+          where: { questionId: answer.questionId, isBest: true },
+          data: { isBest: false },
+        })
 
-      return tx.answer.update({
-        where: { id: answer.id },
-        data: { isBest: true },
-        include: { author: { select: { id: true, name: true } } },
+        return tx.answer.update({
+          where: { id: answer.id },
+          data: { isBest: true },
+          include: { author: { select: { id: true, name: true } } },
+        })
       })
-    })
+    } catch (error: unknown) {
+      if (hasPrismaErrorCode(error, 'P2002')) {
+        throw new ConflictException('Question already has a best answer')
+      }
 
-    return updated
+      throw error
+    }
   }
 
   async remove(id: string): Promise<DeleteResult> {

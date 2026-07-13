@@ -122,6 +122,56 @@ describe('AnswersService (integration)', () => {
     await expect(answersService.markBest(NON_EXISTING_UUID)).rejects.toThrow(NotFoundException)
   })
 
+  it('create should replace previous best answer when creating a new best answer', async () => {
+    const user = await helpers.createUser('answers-create-best')
+    const question = await helpers.createQuestion(user.id, 'create-best')
+
+    const firstAnswer = await helpers.createAnswer(question.id, user.id, 'First best answer', {
+      isBest: true,
+    })
+
+    const createdAnswer = await answersService.create(
+      question.id,
+      {
+        answerText: 'Second best answer',
+        isBest: true,
+      },
+      user.id,
+    )
+
+    expect(createdAnswer.id).not.toBe(firstAnswer.id)
+    expect(createdAnswer.isBest).toBe(true)
+
+    const answers = await prismaService.answer.findMany({
+      where: { questionId: question.id },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    expect(answers).toHaveLength(2)
+    expect(answers.find((answer) => answer.id === firstAnswer.id)?.isBest).toBe(false)
+    expect(answers.find((answer) => answer.id === createdAnswer.id)?.isBest).toBe(true)
+  })
+
+  it('create should respect the DB constraint for one best answer per question', async () => {
+    const user = await helpers.createUser('answers-db-constraint')
+    const question = await helpers.createQuestion(user.id, 'db-constraint')
+
+    await helpers.createAnswer(question.id, user.id, 'Existing best answer', {
+      isBest: true,
+    })
+
+    await expect(
+      prismaService.answer.create({
+        data: {
+          questionId: question.id,
+          authorId: user.id,
+          answerText: 'Conflicting best answer',
+          isBest: true,
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2002' })
+  })
+
   it('update should update answer text for the owner', async () => {
     const user = await helpers.createUser('answers-update')
     const question = await helpers.createQuestion(user.id, 'answers-update')

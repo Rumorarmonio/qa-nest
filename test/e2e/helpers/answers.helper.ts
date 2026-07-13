@@ -5,6 +5,7 @@ import { createE2eLabel } from './e2e-data.helper'
 
 export type CreateAnswerPayload = {
   answerText: string
+  isBest?: boolean
 }
 
 export type CreateAnswerResponseBody = {
