@@ -46,6 +46,7 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+.adminjs/
 
 # Runtime data
 pids

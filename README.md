@@ -157,6 +157,21 @@ docker compose up -d --force-recreate adminer
 
 - https://github.com/vrana/adminer/tree/master/designs
 
+## AdminJS
+
+В проект подключена готовая админка AdminJS.
+
+Адрес:
+
+- `http://localhost:3000/admin`
+
+Для входа используется seed-админ:
+
+- Email: `admin@example.com`
+- Password: `Password123!`
+
+AdminJS открывает UI поверх существующего backend и показывает ресурсы `questions` и `answers`.
+
 ## Postman
 
 В корне репозитория лежит коллекция:
