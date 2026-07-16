@@ -1,8 +1,10 @@
 import { BadGatewayException } from '@nestjs/common'
 import { UserRole } from '@prisma/client'
+import { ComponentLoader } from 'adminjs'
+import { dark, light } from '@adminjs/themes'
 import bcrypt from 'bcrypt'
-import session from 'express-session'
 import connectPgSimple from 'connect-pg-simple'
+import session from 'express-session'
 
 import { PrismaService } from '@/prisma/prisma.service'
 
@@ -14,6 +16,12 @@ type AdminToolkit = {
   }
   router: any
 }
+
+type SessionStoreFactory = new (options: {
+  conString: string
+  tableName: string
+  createTableIfMissing: boolean
+}) => session.Store
 
 function getDatabaseName(connectionString: string): string {
   try {
@@ -72,11 +80,17 @@ export async function setupAdminPanel(prismaService: PrismaService): Promise<Adm
     throw new BadGatewayException('DATABASE_URL is not set')
   }
 
-  const sessionStore = new (connectPgSimple(session))({
+  const PgSessionStore = (
+    connectPgSimple as unknown as (sessionLib: typeof session) => SessionStoreFactory
+  )(session)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const sessionStore: session.Store = new PgSessionStore({
     conString: connectionString,
     tableName: 'adminjs_sessions',
     createTableIfMissing: true,
   })
+  const componentLoader = new ComponentLoader()
+  componentLoader.override('LoggedIn', './components/LoggedIn')
 
   const db = await new Adapter('postgresql', {
     connectionString,
@@ -115,6 +129,9 @@ export async function setupAdminPanel(prismaService: PrismaService): Promise<Adm
 
   const admin = new AdminJS({
     rootPath: '/admin',
+    componentLoader,
+    defaultTheme: dark.id,
+    availableThemes: [dark, light],
     resources: [
       {
         resource: db.table('users'),
@@ -256,7 +273,7 @@ export async function setupAdminPanel(prismaService: PrismaService): Promise<Adm
     ],
   })
 
-  admin.watch()
+  void admin.watch()
 
   const router = AdminJSExpress.buildAuthenticatedRouter(
     admin,
@@ -267,6 +284,7 @@ export async function setupAdminPanel(prismaService: PrismaService): Promise<Adm
     },
     null,
     {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       store: sessionStore,
       resave: false,
       saveUninitialized: false,
@@ -281,6 +299,32 @@ export async function setupAdminPanel(prismaService: PrismaService): Promise<Adm
       },
     },
   )
+
+  router.post('/theme/toggle', (req, res) => {
+    const session = req as typeof req & {
+      session?: {
+        adminUser?: Record<string, unknown> & {
+          theme?: string
+        }
+        save: (callback: (error?: unknown) => void) => void
+      }
+    }
+    if (!session.session?.adminUser) {
+      res.redirect(admin.options.loginPath)
+      return
+    }
+
+    const nextTheme = session.session.adminUser.theme === 'dark' ? 'light' : 'dark'
+
+    session.session.adminUser = {
+      ...session.session.adminUser,
+      theme: nextTheme,
+    }
+
+    session.session.save(() => {
+      res.sendStatus(204)
+    })
+  })
 
   return {
     admin,

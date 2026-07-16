@@ -17,12 +17,12 @@ QA Backend - учебный backend на NestJS + Prisma + PostgreSQL для с�
 ## Статус этапов
 
 - Этап 1 — завершён: ownership rules для update questions/answers зафиксированы в сервисах и покрыты тестами; тестовые helpers переведены на фабрики; e2e helper-слой собран в единый `createE2eHelpers`; integration-тесты получили `setupIntegration`; для integration/e2e добавлена отдельная test DB через `.env.test` и `postgres-test` в docker-compose, тесты запускаются последовательно через `--runInBand`; `db:test:reset` теперь также сидит базовых пользователей для e2e; добавлены проверки `best answer` при создании ответа с `isBest=true` и на DB-level unique constraint; sequential verification подтверждена пользователем
-- Этап 2 — в процессе: AdminJS подключён поверх существующего API как готовая админка; ui-монтаж и auth для `/admin` уже заведены, сессии вынесены в Postgres, а обязательные env-секреты для админки теперь явно проверяются; ручной запуск всё ещё требует доступной Postgres на `127.0.0.1:5432`
+- Этап 2 — в процессе: AdminJS подключён поверх существующего API как готовая админка; ui-монтаж и auth для `/admin` уже заведены, сессии вынесены в Postgres, обязательные env-секреты для админки явно проверяются, а дефолтная dark theme и toggle переключения dark/light уже добавлены; ручной запуск всё ещё требует доступной Postgres на `127.0.0.1:5432`
 - Этап 3 — не начат
 
 ## Следующий этап
 
-Поднять Postgres и вручную проверить `/admin` с заданными `ADMINJS_COOKIE_PASSWORD` и `ADMINJS_SESSION_SECRET`, затем решить, нужны ли ещё кастомные admin endpoints.
+Поднять Postgres и вручную проверить `/admin` с заданными `ADMINJS_COOKIE_PASSWORD` и `ADMINJS_SESSION_SECRET`, затем убедиться, что dark/light переключаются через toggle в шапке и сохраняются в session.
 
 ## Минимальный scope админки
 
