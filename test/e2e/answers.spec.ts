@@ -144,6 +144,7 @@ describe('Answers (e2e)', () => {
           author: expect.objectContaining({
             id: expect.any(String),
             name: expect.any(String),
+            role: 'USER',
           }),
           answerText: 'Created from answers.e2e-spec.ts',
           isBest: expect.any(Boolean),

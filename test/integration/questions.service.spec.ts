@@ -87,6 +87,7 @@ describe('QuestionsService (integration)', () => {
     expect(targetQuestion?.answersCount).toBe(3)
     expect(Array.isArray(targetQuestion?.answers)).toBe(true)
     expect(targetQuestion?.answers).toHaveLength(2)
+    expect(targetQuestion?.answers?.[0].author.role).toBe(user.role)
   })
 
   it('findAll should order included answers with best answer first, then by createdAt asc', async () => {

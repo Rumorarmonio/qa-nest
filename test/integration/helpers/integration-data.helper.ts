@@ -74,6 +74,7 @@ async function createIntegrationAnswer(
         select: {
           id: true,
           name: true,
+          role: true,
         },
       },
     },

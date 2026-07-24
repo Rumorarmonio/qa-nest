@@ -30,14 +30,14 @@ export class AnswersService {
     return this.prismaService.answer.findMany({
       where: { questionId },
       orderBy: [{ isBest: 'desc' }, { createdAt: 'asc' }],
-      include: { author: { select: { id: true, name: true } } },
+      include: { author: { select: { id: true, name: true, role: true } } },
     })
   }
 
   async findOneOrThrow(id: string): Promise<Answer> {
     const answer = await this.prismaService.answer.findUnique({
       where: { id },
-      include: { author: { select: { id: true, name: true } } },
+      include: { author: { select: { id: true, name: true, role: true } } },
     })
 
     if (!answer) {
@@ -73,7 +73,7 @@ export class AnswersService {
             answerText: dto.answerText,
             isBest: dto.isBest ?? false,
           },
-          include: { author: { select: { id: true, name: true } } },
+          include: { author: { select: { id: true, name: true, role: true } } },
         })
 
         return [answer] as const
@@ -109,7 +109,7 @@ export class AnswersService {
         data: {
           answerText: dto.answerText ?? undefined,
         },
-        include: { author: { select: { id: true, name: true } } },
+        include: { author: { select: { id: true, name: true, role: true } } },
       })
     } catch (error: unknown) {
       if (hasPrismaErrorCode(error, 'P2025')) {
@@ -140,7 +140,7 @@ export class AnswersService {
         return tx.answer.update({
           where: { id: answer.id },
           data: { isBest: true },
-          include: { author: { select: { id: true, name: true } } },
+          include: { author: { select: { id: true, name: true, role: true } } },
         })
       })
     } catch (error: unknown) {

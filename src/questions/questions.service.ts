@@ -35,7 +35,7 @@ export class QuestionsService {
             ? {
                 orderBy: [{ isBest: 'desc' }, { createdAt: 'asc' }],
                 take: answersLimit,
-                include: { author: { select: { id: true, name: true } } },
+                include: { author: { select: { id: true, name: true, role: true } } },
               }
             : false,
         },
