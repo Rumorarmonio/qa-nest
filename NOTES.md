@@ -10,7 +10,7 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 
 ## Текущее состояние
 
-Сейчас основной API уже есть и покрывает базовый сценарий использования. Auth, questions, answers, Prisma-схема, сидеры, Swagger и тестовая инфраструктура реализованы. AdminJS уже подключён как готовая админка поверх существующего API; маршрут `/admin` должен открывать панель после запуска приложения и доступной Postgres. Для списков и поиска связей добавлен read-only ресурс `users`, чтобы relation search для `questions` и `answers` не падал. Для AdminJS теперь обязательны явные `ADMINJS_COOKIE_PASSWORD` и `ADMINJS_SESSION_SECRET`, а сессии хранятся в Postgres через отдельный session store. В админке включена дефолтная тёмная тема, а переключение dark/light вынесено в toggle рядом с профилем и сохраняется через session-поле `currentAdmin.theme` и отдельный маршрут внутри `/admin`. Коллекция Postman существует, но рассматривается как вспомогательный ручной инструмент, а не как основной источник качества.
+Сейчас основной API уже есть и покрывает базовый сценарий использования. Auth, questions, answers, Prisma-схема, сидеры, Swagger и тестовая инфраструктура реализованы. AdminJS уже подключён как готовая админка поверх существующего API; маршрут `/admin` должен открывать панель после запуска приложения и доступной Postgres. Для списков и поиска связей добавлен read-only ресурс `users`, чтобы relation search для `questions` и `answers` не падал. Для AdminJS теперь обязательны явные `ADMINJS_COOKIE_PASSWORD` и `ADMINJS_SESSION_SECRET`, а сессии хранятся в Postgres через отдельный session store. Конфигурация админки уже разнесена в `src/admin/setup/` на отдельные модули для auth, env, resources, session и theme-route, а `admin.setup.ts` оставлен как тонкий оркестратор. В админке включена дефолтная тёмная тема, а переключение dark/light вынесено в toggle рядом с профилем и сохраняется через session-поле `currentAdmin.theme` и отдельный маршрут внутри `/admin`. Коллекция Postman существует, но рассматривается как вспомогательный ручной инструмент, а не как основной источник качества.
 
 ## Ключевые решения
 
@@ -47,6 +47,7 @@ QA Backend - NestJS + Prisma backend для Q&A-сценария. В проек�
 - AdminJS подключён как готовая админка поверх существующего API.
 - В AdminJS добавлен read-only ресурс `users` для relation search.
 - В AdminJS сессии хранятся в Postgres, а секреты cookie/session теперь задаются явно через env.
+- Конфигурация AdminJS разнесена в `src/admin/setup/` на `admin.auth.ts`, `admin.env.ts`, `admin.resources.ts`, `admin.session.ts` и `admin.theme.ts`, а `admin.setup.ts` оставлен только для сборки.
 - В AdminJS включена дефолтная dark theme, а переключение dark/light сделано через toggle и `currentAdmin.theme` в session.
 
 ## Текущие проблемы / открытые вопросы

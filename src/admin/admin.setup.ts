@@ -1,63 +1,22 @@
-import { BadGatewayException } from '@nestjs/common'
-import { UserRole } from '@prisma/client'
 import { ComponentLoader } from 'adminjs'
 import { dark, light } from '@adminjs/themes'
-import bcrypt from 'bcrypt'
-import connectPgSimple from 'connect-pg-simple'
-import session from 'express-session'
 
 import { PrismaService } from '@/prisma/prisma.service'
+
+import { createAdminAuthenticate } from './setup/admin.auth'
+import { createAdminResources } from './setup/admin.resources'
+import { createAdminSessionStore, getDatabaseName } from './setup/admin.session'
+import { parseBoolean, requireEnv } from './setup/admin.env'
+import { registerAdminThemeToggleRoute } from './setup/admin.theme'
 
 type AdminToolkit = {
   admin: {
     options: {
       rootPath: string
+      loginPath: string
     }
   }
   router: any
-}
-
-type SessionStoreFactory = new (options: {
-  conString: string
-  tableName: string
-  createTableIfMissing: boolean
-}) => session.Store
-
-function getDatabaseName(connectionString: string): string {
-  try {
-    const url = new URL(connectionString)
-    const databaseName = url.pathname.replace(/^\//, '')
-
-    if (!databaseName) {
-      throw new BadGatewayException('DATABASE_URL must include database name')
-    }
-
-    return databaseName
-  } catch (error) {
-    if (error instanceof BadGatewayException) {
-      throw error
-    }
-
-    throw new BadGatewayException('DATABASE_URL is invalid')
-  }
-}
-
-function parseBoolean(value: string | undefined, fallback: boolean): boolean {
-  if (value === undefined) {
-    return fallback
-  }
-
-  return value === 'true'
-}
-
-function requireEnv(name: string): string {
-  const value = process.env[name]
-
-  if (!value) {
-    throw new BadGatewayException(`${name} is not set`)
-  }
-
-  return value
 }
 
 export async function setupAdminPanel(prismaService: PrismaService): Promise<AdminToolkit> {
@@ -74,21 +33,9 @@ export async function setupAdminPanel(prismaService: PrismaService): Promise<Adm
     Resource,
   })
 
-  const connectionString = process.env.DATABASE_URL
-
-  if (!connectionString) {
-    throw new BadGatewayException('DATABASE_URL is not set')
-  }
-
-  const PgSessionStore = (
-    connectPgSimple as unknown as (sessionLib: typeof session) => SessionStoreFactory
-  )(session)
+  const connectionString = requireEnv('DATABASE_URL')
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const sessionStore: session.Store = new PgSessionStore({
-    conString: connectionString,
-    tableName: 'adminjs_sessions',
-    createTableIfMissing: true,
-  })
+  const sessionStore = createAdminSessionStore(connectionString)
   const componentLoader = new ComponentLoader()
   componentLoader.override('LoggedIn', './components/LoggedIn')
 
@@ -97,180 +44,12 @@ export async function setupAdminPanel(prismaService: PrismaService): Promise<Adm
     database: getDatabaseName(connectionString),
   }).init()
 
-  const authenticate = async (email: string, password: string) => {
-    const user = await prismaService.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        passwordHash: true,
-      },
-    })
-
-    if (!user || user.role !== UserRole.ADMIN) {
-      return null
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash)
-
-    if (!isPasswordValid) {
-      return null
-    }
-
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    }
-  }
-
   const admin = new AdminJS({
     rootPath: '/admin',
     componentLoader,
     defaultTheme: dark.id,
     availableThemes: [dark, light],
-    resources: [
-      {
-        resource: db.table('users'),
-        options: {
-          navigation: 'Content',
-          actions: {
-            new: {
-              isAccessible: false,
-            },
-            edit: {
-              isAccessible: false,
-            },
-            delete: {
-              isAccessible: false,
-            },
-          },
-          properties: {
-            password_hash: {
-              isVisible: false,
-            },
-            created_at: {
-              isVisible: {
-                list: true,
-                filter: true,
-                show: true,
-                edit: false,
-              },
-            },
-            updated_at: {
-              isVisible: {
-                list: true,
-                filter: true,
-                show: true,
-                edit: false,
-              },
-            },
-          },
-        },
-      },
-      {
-        resource: db.table('questions'),
-        options: {
-          navigation: 'Content',
-          actions: {
-            new: {
-              isAccessible: false,
-            },
-          },
-          properties: {
-            author_id: {
-              isVisible: {
-                list: true,
-                filter: true,
-                show: true,
-                edit: false,
-              },
-            },
-            title: {
-              type: 'string',
-            },
-            question_text: {
-              type: 'textarea',
-            },
-            created_at: {
-              isVisible: {
-                list: true,
-                filter: true,
-                show: true,
-                edit: false,
-              },
-            },
-            updated_at: {
-              isVisible: {
-                list: true,
-                filter: true,
-                show: true,
-                edit: false,
-              },
-            },
-          },
-        },
-      },
-      {
-        resource: db.table('answers'),
-        options: {
-          navigation: 'Content',
-          actions: {
-            new: {
-              isAccessible: false,
-            },
-          },
-          properties: {
-            question_id: {
-              isVisible: {
-                list: true,
-                filter: true,
-                show: true,
-                edit: false,
-              },
-            },
-            author_id: {
-              isVisible: {
-                list: true,
-                filter: true,
-                show: true,
-                edit: false,
-              },
-            },
-            answer_text: {
-              type: 'textarea',
-            },
-            is_best: {
-              isVisible: {
-                list: true,
-                filter: true,
-                show: true,
-                edit: true,
-              },
-            },
-            created_at: {
-              isVisible: {
-                list: true,
-                filter: true,
-                show: true,
-                edit: false,
-              },
-            },
-            updated_at: {
-              isVisible: {
-                list: true,
-                filter: true,
-                show: true,
-                edit: false,
-              },
-            },
-          },
-        },
-      },
-    ],
+    resources: createAdminResources(db),
   })
 
   void admin.watch()
@@ -278,7 +57,7 @@ export async function setupAdminPanel(prismaService: PrismaService): Promise<Adm
   const router = AdminJSExpress.buildAuthenticatedRouter(
     admin,
     {
-      authenticate,
+      authenticate: createAdminAuthenticate(prismaService),
       cookieName: 'adminjs',
       cookiePassword: requireEnv('ADMINJS_COOKIE_PASSWORD'),
     },
@@ -300,31 +79,7 @@ export async function setupAdminPanel(prismaService: PrismaService): Promise<Adm
     },
   )
 
-  router.post('/theme/toggle', (req, res) => {
-    const session = req as typeof req & {
-      session?: {
-        adminUser?: Record<string, unknown> & {
-          theme?: string
-        }
-        save: (callback: (error?: unknown) => void) => void
-      }
-    }
-    if (!session.session?.adminUser) {
-      res.redirect(admin.options.loginPath)
-      return
-    }
-
-    const nextTheme = session.session.adminUser.theme === 'dark' ? 'light' : 'dark'
-
-    session.session.adminUser = {
-      ...session.session.adminUser,
-      theme: nextTheme,
-    }
-
-    session.session.save(() => {
-      res.sendStatus(204)
-    })
-  })
+  registerAdminThemeToggleRoute(router, admin.options.loginPath)
 
   return {
     admin,
