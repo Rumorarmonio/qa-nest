@@ -47,6 +47,9 @@ export class QuestionsService {
     const items = questions.map(({ _count, ...question }) => ({
       ...question,
       answersCount: _count.answers,
+      ...(includeAnswers
+        ? { answersComplete: question.answers.length >= _count.answers }
+        : {}),
     })) as QuestionListItem[]
 
     return {

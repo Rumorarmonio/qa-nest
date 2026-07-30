@@ -87,6 +87,7 @@ describe('QuestionsService (integration)', () => {
     expect(targetQuestion?.answersCount).toBe(3)
     expect(Array.isArray(targetQuestion?.answers)).toBe(true)
     expect(targetQuestion?.answers).toHaveLength(2)
+    expect(targetQuestion?.answersComplete).toBe(false)
     expect(targetQuestion?.answers?.[0].author.role).toBe(user.role)
   })
 
@@ -130,9 +131,31 @@ describe('QuestionsService (integration)', () => {
 
     expect(targetQuestion).toBeDefined()
     expect(targetQuestion?.answers).toHaveLength(3)
+    expect(targetQuestion?.answersComplete).toBe(true)
     expect(targetQuestion?.answers?.[0].id).toBe(bestAnswer.id)
     expect(targetQuestion?.answers?.[1].id).toBe(regularEarlier.id)
     expect(targetQuestion?.answers?.[2].id).toBe(regularLater.id)
+  })
+
+  it('findAll should include all answers when answersLimit is not provided', async () => {
+    const user = await helpers.createUser('questions-find-all-4')
+    const question = await helpers.createQuestion(user.id, 'all-answers')
+
+    await helpers.createAnswer(question.id, user.id, 'Answer 1')
+    await helpers.createAnswer(question.id, user.id, 'Answer 2')
+    await helpers.createAnswer(question.id, user.id, 'Answer 3')
+
+    const result = await questionsService.findAll({
+      page: 1,
+      limit: 500,
+      includeAnswers: true,
+    })
+
+    const targetQuestion = result.items.find((item) => item.id === question.id)
+
+    expect(targetQuestion?.answersCount).toBe(3)
+    expect(targetQuestion?.answers).toHaveLength(3)
+    expect(targetQuestion?.answersComplete).toBe(true)
   })
 
   it('findOneOrThrow should return question with author', async () => {

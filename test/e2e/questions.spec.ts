@@ -30,6 +30,16 @@ describe('Questions (e2e)', () => {
   })
 
   describe('Public', () => {
+    it('should expose OpenAPI JSON and YAML documents', async () => {
+      const jsonResponse = await request().get('/api/docs.json').expect(200)
+      const yamlResponse = await request().get('/api/docs.yaml').expect(200)
+
+      expect(jsonResponse.type).toBe('application/json')
+      expect(jsonResponse.body.openapi).toBeDefined()
+      expect(yamlResponse.type).toBe('text/yaml')
+      expect(yamlResponse.text).toContain('openapi:')
+    })
+
     testRoute(questions.list, 'should return paginated questions list', async () => {
       const response = await request().get(questions.list.build()).expect(200)
 
@@ -115,6 +125,10 @@ describe('Questions (e2e)', () => {
 
         for (const question of response.body.items) {
           if (Array.isArray(question.answers)) {
+            expect(question.answersCount).toEqual(expect.any(Number))
+            expect(question.answersComplete).toBe(
+              question.answers.length >= question.answersCount,
+            )
             expect(question.answers.length).toBeLessThanOrEqual(1)
           }
         }

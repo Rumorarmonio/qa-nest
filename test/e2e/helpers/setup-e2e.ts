@@ -4,6 +4,7 @@ import request from 'supertest'
 import { AppModule } from '@/app.module'
 import { PrismaService } from '@/prisma/prisma.service'
 import { API_PREFIX } from '@/shared/constants/api'
+import { setupSwagger } from '@/swagger'
 
 import { cleanupE2eData } from './e2e-data.helper'
 
@@ -34,6 +35,7 @@ export function setupE2e(options: SetupE2eOptions = {}) {
       app.setGlobalPrefix(API_PREFIX)
     }
 
+    setupSwagger(app)
     await app.init()
   })
 

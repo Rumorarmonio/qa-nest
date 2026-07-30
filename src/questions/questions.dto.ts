@@ -65,6 +65,7 @@ export class ListQuestionsQueryDto extends createZodDto(listQuestionsQuerySchema
 export const questionListItemSchema = questionSchema.extend({
   answersCount: z.number().int().min(0),
   answers: z.array(answerSchema).optional(),
+  answersComplete: z.boolean().optional(),
 })
 
 export type QuestionListItem = z.output<typeof questionListItemSchema>

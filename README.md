@@ -13,6 +13,7 @@
     - `page`, `limit`
     - `includeAnswers`
     - `answersLimit` (ограничение количества ответов на вопрос)
+    - `answersCount` и `answersComplete` в элементах с загруженными ответами
 - Swagger UI + OpenAPI спецификация.
 - Сидеры для заполнения БД тестовыми данными: users, questions, answers.
 - Postman-коллекция для тестирования API.
@@ -116,13 +117,13 @@ API поднимется (по умолчанию) на `http://localhost:3000`.
 
 ### OpenAPI JSON
 
-- `http://localhost:3000/api/docs-json`
+- `http://localhost:3000/api/docs.json`
 
 ### OpenAPI YAML
 
 Если в проекте включён YAML endpoint, то:
 
-- `http://localhost:3000/api/docs-yaml`
+- `http://localhost:3000/api/docs.yaml`
 
 Если YAML endpoint отключён, YAML можно получить конвертацией из JSON любым инструментом.
 
